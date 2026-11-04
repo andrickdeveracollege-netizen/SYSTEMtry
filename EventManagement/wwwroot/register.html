@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Register for an Event</title>
+    <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+    <header class="top"><a class="brand" href="/index.html">UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
+    <main style="max-width:640px">
+        <div class="card">
+            <h1>Register for an Event</h1>
+            <form id="form">
+                <label>Event</label><select id="eventId" required></select>
+                <div class="hint" id="audience"></div>
+                <label>Email</label><input type="email" id="email" required />
+                <label>Full name</label><input type="text" id="fullName" required />
+                <label>Year level</label>
+                <select id="yearLevel" required>
+                    <option value="">Select…</option>
+                    <option>Elementary</option>
+                    <option>JHS</option>
+                    <option>SHS</option>
+                    <option>College</option>
+                </select>
+                <label style="display:flex;gap:8px;align-items:center;font-weight:400;margin-top:16px">
+                    <input type="checkbox" id="confirmed" /> I confirm that my details are correct and I will attend this event.
+                </label>
+                <div class="msg" id="msg"></div>
+                <div style="margin-top:14px"><button class="btn" type="submit">Register</button> <a class="btn ghost" href="/dashboard.html">Back</a></div>
+            </form>
+        </div>
+    </main>
+    <script src="/js/api.js"></script>
+    <script>
+  if (!Auth.require()) throw new Error('auth');
+  renderNav(document.getElementById('nav'));
+  email.value = Auth.user.email; fullName.value = Auth.user.fullName;
+  let events = [];
+
+  (async () => {
+    events = await api('/api/events/bulletin');
+    const sel = document.getElementById('eventId');
+    sel.innerHTML = events.length
+      ? events.map(e => `<option value="${e.id}">${esc(e.title)} — ${fmt(e.startTime)} @ ${esc(e.facilityName)}</option>`).join('')
+      : '<option value="">No open events</option>';
+    const pre = new URLSearchParams(location.search).get('eventId');
+    if (pre) sel.value = pre;
+    showAudience();
+  })().catch(err => showMsg(msg, err.message, false));
+
+  function showAudience() {
+    const ev = events.find(e => e.id == eventId.value);
+    audience.textContent = ev ? 'Open to: ' + ev.targetAudience : '';
+  }
+  eventId.onchange = showAudience;
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      const r = await api('/api/registrations', { method: 'POST', body: {
+        eventId: Number(eventId.value), email: email.value, fullName: fullName.value,
+        yearLevel: yearLevel.value, confirmed: confirmed.checked
+      }});
+      showMsg(msg, r.message, true);
+    } catch (err) { showMsg(msg, err.message, false); }
+  });
+    </script>
+</body>
+</html>

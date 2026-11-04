@@ -1,0 +1,345 @@
+﻿:root {
+    --blue: #0b3d91;
+    --gold: #f2b705;
+    --bg: #f4f6fb;
+    --ink: #1d2433;
+    --muted: #667085;
+    --line: #e3e7ef;
+    --ok: #1a7f4b;
+    --bad: #c0392b;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Segoe UI,Roboto,Arial,sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+}
+
+header.top {
+    background: var(--blue);
+    color: #fff;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 4px solid var(--gold);
+}
+
+    header.top a {
+        color: #fff;
+        text-decoration: none;
+    }
+
+    header.top .brand {
+        font-weight: 700;
+        font-size: 1.15rem;
+    }
+
+    header.top nav {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        font-size: .95rem;
+    }
+
+main {
+    max-width: 1100px;
+    margin: 24px auto;
+    padding: 0 16px;
+}
+
+h1, h2 {
+    margin: 0 0 12px;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px;
+    box-shadow: 0 1px 3px rgba(16,24,40,.05);
+}
+
+.grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fill,minmax(260px,1fr));
+}
+
+.btn {
+    display: inline-block;
+    background: var(--blue);
+    color: #fff;
+    border: 0;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: .95rem;
+    text-decoration: none;
+}
+
+    .btn.gold {
+        background: var(--gold);
+        color: #222;
+    }
+
+    .btn.ghost {
+        background: #fff;
+        color: var(--blue);
+        border: 1px solid var(--blue);
+    }
+
+    .btn.ok {
+        background: var(--ok);
+    }
+
+    .btn.bad {
+        background: var(--bad);
+    }
+
+    .btn:disabled {
+        opacity: .6;
+        cursor: not-allowed;
+    }
+
+.options {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
+    margin-bottom: 24px;
+}
+
+    .options .card {
+        text-align: center;
+    }
+
+        .options .card h2 {
+            color: var(--blue);
+        }
+
+label {
+    display: block;
+    font-weight: 600;
+    margin: 12px 0 4px;
+    font-size: .9rem;
+}
+
+input[type=text], input[type=email], input[type=password], input[type=datetime-local], select, textarea, input[type=file] {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid #cbd2e0;
+    border-radius: 8px;
+    font: inherit;
+    background: #fff;
+}
+
+textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+    .checks label {
+        font-weight: 400;
+        margin: 0;
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+.msg {
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin: 12px 0;
+    display: none;
+}
+
+    .msg.ok {
+        display: block;
+        background: #e8f6ee;
+        color: var(--ok);
+    }
+
+    .msg.err {
+        display: block;
+        background: #fdecea;
+        color: var(--bad);
+    }
+
+.tag {
+    display: inline-block;
+    font-size: .75rem;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: #e8eefc;
+    color: var(--blue);
+    margin-right: 4px;
+}
+
+    .tag.pending {
+        background: #fff3cd;
+        color: #8a6d00;
+    }
+
+    .tag.approved {
+        background: #e8f6ee;
+        color: var(--ok);
+    }
+
+    .tag.rejected {
+        background: #fdecea;
+        color: var(--bad);
+    }
+
+.muted {
+    color: var(--muted);
+    font-size: .9rem;
+}
+
+.hint {
+    font-size: .85rem;
+    color: var(--muted);
+    margin-top: 4px;
+}
+/* Calendar */
+.cal-head {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+    .cal-head h2 {
+        margin: 0;
+        flex: 1;
+        min-width: 160px;
+    }
+
+    .cal-head select {
+        width: auto;
+    }
+
+.cal {
+    display: grid;
+    grid-template-columns: repeat(7,1fr);
+    border-top: 1px solid var(--line);
+    border-left: 1px solid var(--line);
+    background: #fff;
+}
+
+    .cal .dow {
+        background: #eef2fb;
+        font-weight: 600;
+        text-align: center;
+        padding: 6px;
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        font-size: .85rem;
+    }
+
+    .cal .day {
+        min-height: 96px;
+        padding: 4px;
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        cursor: pointer;
+        font-size: .78rem;
+        overflow: hidden;
+    }
+
+        .cal .day.other {
+            background: #fafbfd;
+            color: #aab;
+        }
+
+        .cal .day.today {
+            outline: 2px solid var(--gold);
+            outline-offset: -2px;
+        }
+
+        .cal .day .n {
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+    .cal .ev {
+        background: #dff0e6;
+        border-left: 3px solid var(--ok);
+        margin: 2px 0;
+        padding: 1px 4px;
+        border-radius: 3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+        .cal .ev.pending {
+            background: #fff3cd;
+            border-color: #c99700;
+        }
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 10;
+}
+
+    .modal.open {
+        display: flex;
+    }
+
+    .modal .card {
+        width: 100%;
+        max-width: 420px;
+    }
+
+.tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+    .tabs button {
+        flex: 1;
+    }
+
+.req {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+    background: #fff;
+}
+
+    .req .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+    }
+
+@media (max-width:700px) {
+    .cal .day {
+        min-height: 64px;
+    }
+
+    .cal .ev {
+        font-size: .65rem;
+    }
+}

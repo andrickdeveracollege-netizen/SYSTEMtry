@@ -1,0 +1,119 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Approvals – Event Management</title>
+    <link rel="stylesheet" href="/css/site.css" />
+</head>
+<body>
+    <header class="top"><a class="brand" href="/index.html">UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
+    <main>
+        <h1>Approvals</h1>
+        <div class="muted" id="office" style="margin-bottom:10px"></div>
+
+        <div class="tabs" id="kindTabs" style="max-width:420px;display:none">
+            <button class="btn" data-k="facility">Facility requests</button>
+            <button class="btn ghost" data-k="equipment">Equipment requests</button>
+        </div>
+
+        <div class="tabs" id="statusTabs" style="max-width:420px">
+            <button class="btn" data-s="Pending">Pending</button>
+            <button class="btn ghost" data-s="Approved">Approved</button>
+            <button class="btn ghost" data-s="Rejected">Rejected</button>
+        </div>
+
+        <div class="msg" id="msg"></div>
+        <div id="list"></div>
+    </main>
+    <script src="/js/api.js"></script>
+    <script>
+        if (!Auth.require(true)) throw new Error('auth');
+        renderNav(document.getElementById('nav'));
+
+        const dept = Auth.user.department || '';
+        const hasEquipment = dept === 'Auxiliary' || dept === 'ITMC';   // offices that own equipment
+        document.getElementById('office').textContent = 'Office: ' + dept;
+        if (hasEquipment) document.getElementById('kindTabs').style.display = 'flex';
+
+        let kind = 'facility', status = 'Pending';
+
+        document.querySelectorAll('#kindTabs button').forEach(b => b.onclick = () => {
+            kind = b.dataset.k;
+            document.querySelectorAll('#kindTabs button').forEach(x => x.className = 'btn' + (x === b ? '' : ' ghost'));
+            load();
+        });
+        document.querySelectorAll('#statusTabs button').forEach(b => b.onclick = () => {
+            status = b.dataset.s;
+            document.querySelectorAll('#statusTabs button').forEach(x => x.className = 'btn' + (x === b ? '' : ' ghost'));
+            load();
+        });
+
+        const msgBox = document.getElementById('msg');
+        const load = () => (kind === 'facility' ? loadFacility() : loadEquipment());
+
+        async function loadFacility() {
+            const list = document.getElementById('list');
+            try {
+                const items = await api('/api/admin/requests?status=' + status);
+                list.innerHTML = items.length ? items.map(r => `
+            <div class="req">
+              <strong>${esc(r.title)}</strong> <span class="tag ${r.status.toLowerCase()}">${r.status}</span>
+              <div class="muted">${esc(r.facilityName)} · ${fmt(r.startTime)} – ${fmtTime(r.endTime)}</div>
+              <p style="margin:8px 0 4px"><strong>${esc(r.requesterName)}</strong> (${r.role}) · ${esc(r.organization)} · ${esc(r.requesterEmail)}</p>
+              <div>Audience: ${r.targetAudience.split(',').map(t => `<span class="tag">${esc(t.trim())}</span>`).join('')}</div>
+              <p>${esc(r.purpose)}</p>
+              ${r.rejectionReason ? `<div class="muted">Reason: ${esc(r.rejectionReason)}</div>` : ''}
+              <div class="row">
+                ${r.hasEndorsement
+                        ? `<button class="btn ghost" onclick="openEndorsement(${r.id})">View endorsement (${esc(r.endorsementFileName)})</button>`
+                        : `<span class="tag">${r.endorsementOptional ? 'No endorsement (optional for College)' : 'No endorsement'}</span>`}
+                ${r.status === 'Pending' ? `
+                  <button class="btn ok" onclick="act('/api/admin/requests/${r.id}', 'approve')">Approve</button>
+                  <button class="btn bad" onclick="act('/api/admin/requests/${r.id}', 'reject')">Reject</button>` : ''}
+              </div>
+            </div>`).join('') : '<div class="card muted">Nothing here.</div>';
+            } catch (err) { showMsg(msgBox, err.message, false); }
+        }
+
+        async function loadEquipment() {
+            const list = document.getElementById('list');
+            try {
+                const items = await api('/api/admin/equipment-requests?status=' + status);
+                list.innerHTML = items.length ? items.map(r => `
+            <div class="req">
+              <strong>${esc(r.equipmentName)} × ${r.quantity}</strong>
+              <span class="tag ${r.status.toLowerCase()}">${r.status}</span>
+              ${r.isOther ? '<span class="tag">Others</span>' : ''}
+              ${r.notes ? `<p style="margin:6px 0"><em>${esc(r.notes)}</em></p>` : ''}
+              <div class="muted">For event: <strong>${esc(r.eventTitle)}</strong> · ${esc(r.facilityName)} · ${fmt(r.startTime)} – ${fmtTime(r.endTime)}</div>
+              <div class="muted">${esc(r.requesterName)} · ${esc(r.organization)} · ${esc(r.requesterEmail)}</div>
+              ${r.rejectionReason ? `<div class="muted">Reason: ${esc(r.rejectionReason)}</div>` : ''}
+              ${r.status === 'Pending' ? `
+                <div class="row">
+                  <button class="btn ok" onclick="act('/api/admin/equipment-requests/${r.id}', 'approve')">Approve</button>
+                  <button class="btn bad" onclick="act('/api/admin/equipment-requests/${r.id}', 'reject')">Reject</button>
+                </div>` : ''}
+            </div>`).join('') : '<div class="card muted">Nothing here.</div>';
+            } catch (err) { showMsg(msgBox, err.message, false); }
+        }
+
+        // Shared approve / reject for both kinds
+        async function act(base, action) {
+            try {
+                if (action === 'reject') {
+                    const reason = prompt('Reason for rejection:');
+                    if (!reason) return;
+                    await api(`${base}/reject`, { method: 'POST', body: { reason } });
+                } else {
+                    await api(`${base}/approve`, { method: 'POST' });
+                }
+                msgBox.className = 'msg';
+                load();
+            } catch (err) { showMsg(msgBox, err.message, false); }
+        }
+
+        load();
+    </script>
+</body>
+</html>
