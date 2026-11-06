@@ -1,4 +1,4 @@
-﻿using EventManagement.Service;
+using EventManagement.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,7 +6,7 @@ namespace EventManagement.Controllers;
 
 [ApiController]
 [Route("api/facilities")]
-[Authorize]
+[AllowAnonymous]
 public class FacilitiesController : ControllerBase
 {
     private readonly IEventService _events;

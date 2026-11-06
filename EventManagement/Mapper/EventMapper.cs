@@ -1,20 +1,31 @@
-﻿using EventManagement.Model.Domain;
+using EventManagement.Model.Domain;
 using EventManagement.Model.DTO;
 
 namespace EventManagement.Mapper;
 
 public static class EventMapper
 {
-    public static EventSummaryDto ToSummary(this CampusEvent e) => new(
-        e.Id, e.Title, e.Organization, e.Purpose,
-        e.FacilityId, e.Facility?.Name ?? "", e.StartTime, e.EndTime,
-        e.TargetAudience, e.Status);
+    // Needs DepartmentRequests -> Facilities -> Facility and Registrations loaded
+    public static EventSummaryDto ToSummary(this CampusEvent e)
+    {
+        var facilities = e.DepartmentRequests
+            .SelectMany(d => d.Facilities)
+            .Where(f => f.Facility != null)
+            .Select(f => f.Facility!)
+            .DistinctBy(f => f.Id)
+            .ToList();
 
-    public static AdminRequestDto ToAdminDto(this CampusEvent e) => new(
-        e.Id, e.Title, e.RequesterName, e.RequesterEmail, e.Organization,
-        e.Role, e.TargetAudience, e.Purpose,
-        e.Facility?.Name ?? "", e.StartTime, e.EndTime,
-        e.Status, e.EndorsementStoredName != null,
-        e.ApproverDepartment == DepartmentType.College,
-        e.EndorsementOriginalName, e.RejectionReason, e.CreatedAt);
+        return new(
+            e.Id, e.Title, e.Organization, e.Purpose,
+            facilities.Select(f => f.Id).ToList(),
+            facilities.Select(f => f.Name).ToList(),
+            e.StartTime, e.EndTime, e.TargetAudience,
+            e.Capacity, e.Registrations.Count(r => !r.Cancelled), e.Status);
+    }
+
+    public static EventDetailDto ToDetail(this CampusEvent e) => new(
+        e.ToSummary(), e.RequesterName, e.Role,
+        e.DepartmentRequests
+            .Select(d => new DepartmentStatusDto(FacilityMapper.OfficeName(d.Department), d.Status, d.RejectionReason))
+            .ToList());
 }

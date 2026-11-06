@@ -1,4 +1,4 @@
-﻿namespace EventManagement.Model.Domain;
+namespace EventManagement.Model.Domain;
 
 public class CampusEvent
 {
@@ -11,23 +11,16 @@ public class CampusEvent
     public RequesterRole Role { get; set; }
     public YearLevel TargetAudience { get; set; }
     public string Purpose { get; set; } = string.Empty;
+    public int Capacity { get; set; }          // max registrations (tickets)
 
-    public int FacilityId { get; set; }
-    public Facility? Facility { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
 
+    // Overall status, derived from the department requests (see EventService.RecomputeStatus)
     public EventStatus Status { get; set; } = EventStatus.Pending;
-    public DepartmentType ApproverDepartment { get; set; }
-
-    public string? EndorsementStoredName { get; set; }
-    public string? EndorsementOriginalName { get; set; }
-
-    public string? ReviewedBy { get; set; }
-    public DateTime? ReviewedAt { get; set; }
-    public string? RejectionReason { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+    // One row per department the requester ticked
+    public ICollection<DepartmentRequest> DepartmentRequests { get; set; } = new List<DepartmentRequest>();
     public ICollection<EventRegistration> Registrations { get; set; } = new List<EventRegistration>();
-    public ICollection<EventEquipment> EquipmentItems { get; set; } = new List<EventEquipment>();
 }

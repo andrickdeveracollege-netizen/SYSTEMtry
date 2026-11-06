@@ -1,92 +1,69 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Dashboard – Event Management</title>
     <link rel="stylesheet" href="/css/site.css" />
+    <link rel="stylesheet" href="/css/board.css" />
 </head>
 <body>
     <header class="top"><a class="brand" href="/index.html">UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
     <main>
         <h1 id="hello">Dashboard</h1>
-        <div class="options">
-            <div class="card"><h2>Register for an Event</h2><p class="muted">Join an approved event open to your year level.</p><a class="btn" href="/register.html">Register</a></div>
-            <div class="card"><h2>Request an Event</h2><p class="muted">Reserve a facility and submit your event for approval.</p><a class="btn gold" href="/request.html">Request</a></div>
-        </div>
-
-        <div class="card">
-            <div class="cal-head">
-                <h2 id="monthTitle"></h2>
-                <select id="facFilter"><option value="">All facilities</option></select>
-                <button class="btn ghost" id="prev">‹</button><button class="btn ghost" id="today">Today</button><button class="btn ghost" id="next">›</button>
+        <div class="dash">
+            <!-- Shared facility calendar -->
+            <div class="card">
+                <div class="cal-head">
+                    <h2 id="monthTitle"></h2>
+                    <select id="facFilter"><option value="">All facilities</option></select>
+                    <button class="btn ghost" id="prev" type="button">‹</button>
+                    <button class="btn ghost" id="today" type="button">Today</button>
+                    <button class="btn ghost" id="next" type="button">›</button>
+                </div>
+                <div class="muted" style="margin-bottom:8px"><span class="tag approved">Approved</span><span class="tag pending">Pending review (slot on hold)</span></div>
+                <div id="cal" class="cal"></div>
+                <div id="dayList" style="margin-top:16px"></div>
             </div>
-            <div class="muted" style="margin-bottom:8px"><span class="tag approved">Approved</span><span class="tag pending">Pending review (slot on hold)</span></div>
-            <div id="cal" class="cal"></div>
-            <div id="dayList" style="margin-top:16px"></div>
+
+            <div class="stack">
+                <div class="card">
+                    <h2>Request an Event</h2>
+                    <p class="muted">Reserve facilities and equipment. Offices review their own part.</p>
+                    <a class="btn gold" href="/request.html">Request an Event</a>
+                </div>
+                <div class="card">
+                    <h2>Register for an Event</h2>
+                    <p class="muted">Join an approved event open to your year level.</p>
+                    <a class="btn" href="/register.html">Register for an Event</a>
+                </div>
+                <div class="card">
+                    <h2>My event requests</h2>
+                    <div id="myEvents"><div class="spinner">Loading…</div></div>
+                </div>
+                <div class="card">
+                    <h2>My registrations</h2>
+                    <div id="myRegs"><div class="spinner">Loading…</div></div>
+                </div>
+            </div>
         </div>
     </main>
 
+    <div class="modal" id="editModal">
+        <div class="card">
+            <h2>Edit pending request</h2>
+            <form id="editForm" novalidate>
+                <label for="editTitle">Title</label><input type="text" id="editTitle" maxlength="200" />
+                <label for="editPurpose">Purpose</label><textarea id="editPurpose" maxlength="2000"></textarea>
+                <label for="editCapacity">Capacity (seats)</label><input type="number" id="editCapacity" min="1" max="10000" />
+                <div class="msg" id="editMsg"></div>
+                <div style="margin-top:12px"><button class="btn" type="submit" id="editSave">Save</button> <button class="btn ghost" type="button" id="editCancel">Close</button></div>
+            </form>
+        </div>
+    </div>
+
     <script src="/js/api.js"></script>
-    <script>
-  if (!Auth.require()) throw new Error('auth');
-  renderNav(document.getElementById('nav'));
-  document.getElementById('hello').textContent = 'Welcome, ' + Auth.user.fullName;
-
-  let view = new Date(); view.setDate(1);
-  let events = [];
-
-  async function loadFacilities() {
-    const list = await api('/api/facilities');
-    const sel = document.getElementById('facFilter');
-    list.forEach(f => sel.insertAdjacentHTML('beforeend', `<option value="${f.id}">${esc(f.name)} (${esc(f.approvingOffice)})</option>`));
-  }
-
-  async function render() {
-    const y = view.getFullYear(), m = view.getMonth();
-    document.getElementById('monthTitle').textContent = view.toLocaleString([], { month: 'long', year: 'numeric' });
-    const start = new Date(y, m, 1 - new Date(y, m, 1).getDay());
-    const end = new Date(start); end.setDate(end.getDate() + 42);
-    const fac = document.getElementById('facFilter').value;
-    events = await api(`/api/events/calendar?from=${isoLocal(start)}&to=${isoLocal(end)}${fac ? '&facilityId=' + fac : ''}`);
-
-    const cal = document.getElementById('cal');
-    let html = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<div class="dow">${d}</div>`).join('');
-    const todayStr = new Date().toDateString();
-    for (let i = 0; i < 42; i++) {
-      const d = new Date(start); d.setDate(start.getDate() + i);
-      const dayEvents = eventsOn(d);
-      html += `<div class="day ${d.getMonth() !== m ? 'other' : ''} ${d.toDateString() === todayStr ? 'today' : ''}" data-date="${isoLocal(d)}">
-        <div class="n">${d.getDate()}</div>
-        ${dayEvents.slice(0, 3).map(e => `<div class="ev ${e.status === 'Pending' ? 'pending' : ''}" title="${esc(e.title)}">${fmtTime(e.startTime)} ${esc(e.facilityName)}</div>`).join('')}
-        ${dayEvents.length > 3 ? `<div class="muted">+${dayEvents.length - 3} more</div>` : ''}
-      </div>`;
-    }
-    cal.innerHTML = html;
-    cal.querySelectorAll('.day').forEach(el => el.onclick = () => showDay(new Date(el.dataset.date)));
-    document.getElementById('dayList').innerHTML = '';
-  }
-
-  function eventsOn(d) {
-    const s = new Date(d.getFullYear(), d.getMonth(), d.getDate()), e = new Date(s); e.setDate(e.getDate() + 1);
-    return events.filter(ev => new Date(ev.startTime) < e && new Date(ev.endTime) > s);
-  }
-
-  function showDay(d) {
-    const list = eventsOn(d);
-    document.getElementById('dayList').innerHTML = `<h3>${d.toLocaleDateString([], { dateStyle: 'full' })}</h3>` +
-      (list.length ? list.map(e => `<div class="req"><strong>${esc(e.title)}</strong>
-        <span class="tag ${e.status.toLowerCase()}">${e.status}</span><br>
-        <span class="muted">${esc(e.facilityName)} · ${fmtTime(e.startTime)} – ${fmtTime(e.endTime)} · ${esc(e.organization)}</span></div>`).join('')
-        : '<div class="muted">No bookings — all facilities are free.</div>');
-  }
-
-  document.getElementById('prev').onclick = () => { view.setMonth(view.getMonth() - 1); render(); };
-  document.getElementById('next').onclick = () => { view.setMonth(view.getMonth() + 1); render(); };
-  document.getElementById('today').onclick = () => { view = new Date(); view.setDate(1); render(); };
-  document.getElementById('facFilter').onchange = render;
-
-  loadFacilities().then(render).catch(err => alert(err.message));
-    </script>
+    <script src="/js/calendar.js"></script>
+    <script src="/js/dashboard.js"></script>
 </body>
 </html>

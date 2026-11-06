@@ -1,4 +1,4 @@
-﻿namespace EventManagement.Model.Domain;
+namespace EventManagement.Model.Domain;
 
 public enum DepartmentType { Auxiliary = 1, ITMC = 2, College = 3, TVET = 4 }
 
@@ -15,5 +15,5 @@ public enum YearLevel
 }
 
 public enum RequesterRole { Faculty = 1, Student = 2 }
-public enum EventStatus { Pending = 1, Approved = 2, Rejected = 3 }
+public enum EventStatus { Pending = 1, Approved = 2, Rejected = 3, Cancelled = 4 }
 public enum UserRole { User = 1, Admin = 2 }

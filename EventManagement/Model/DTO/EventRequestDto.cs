@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using EventManagement.Model.Domain;
 
 namespace EventManagement.Model.DTO;
@@ -11,9 +11,10 @@ public class EventRequestDto
     public RequesterRole Role { get; set; }
     public YearLevel TargetAudience { get; set; }
     [Required, StringLength(2000)] public string Purpose { get; set; } = "";
-    public int FacilityId { get; set; }
+    [Range(1, 10000)] public int Capacity { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
-    public IFormFile? Endorsement { get; set; }
-    public List<EquipmentRequestItemDto> Equipment { get; set; } = new();
+
+    // Only the departments the requester ticked
+    public List<DepartmentRequestInputDto> Departments { get; set; } = new();
 }

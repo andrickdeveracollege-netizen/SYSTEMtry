@@ -1,4 +1,4 @@
-﻿using EventManagement.Model.Domain;
+using EventManagement.Model.Domain;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventManagement.Model.Data;
@@ -10,6 +10,8 @@ public class AppDBContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Facility> Facilities => Set<Facility>();
     public DbSet<CampusEvent> Events => Set<CampusEvent>();
+    public DbSet<DepartmentRequest> DepartmentRequests => Set<DepartmentRequest>();
+    public DbSet<EventFacility> EventFacilities => Set<EventFacility>();
     public DbSet<EventRegistration> Registrations => Set<EventRegistration>();
     public DbSet<Equipment> Equipments => Set<Equipment>();
     public DbSet<EventEquipment> EventEquipments => Set<EventEquipment>();
@@ -36,9 +38,26 @@ public class AppDBContext : DbContext
             e.Property(x => x.RequesterEmail).HasMaxLength(200).IsRequired();
             e.Property(x => x.Organization).HasMaxLength(150).IsRequired();
             e.Property(x => x.Purpose).HasMaxLength(2000).IsRequired();
-            e.HasOne(x => x.Facility).WithMany(f => f.Events)
+            e.HasIndex(x => new { x.StartTime, x.EndTime });
+        });
+
+        b.Entity<DepartmentRequest>(e =>
+        {
+            e.Property(x => x.RejectionReason).HasMaxLength(500);
+            e.Property(x => x.EndorsementStoredName).HasMaxLength(100);
+            e.Property(x => x.EndorsementOriginalName).HasMaxLength(260);
+            e.HasOne(x => x.CampusEvent).WithMany(c => c.DepartmentRequests)
+             .HasForeignKey(x => x.CampusEventId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.CampusEventId, x.Department }).IsUnique();
+        });
+
+        b.Entity<EventFacility>(e =>
+        {
+            e.HasOne(x => x.DepartmentRequest).WithMany(d => d.Facilities)
+             .HasForeignKey(x => x.DepartmentRequestId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Facility).WithMany(f => f.EventFacilities)
              .HasForeignKey(x => x.FacilityId).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.FacilityId, x.StartTime, x.EndTime });
+            e.HasIndex(x => new { x.DepartmentRequestId, x.FacilityId }).IsUnique();
         });
 
         b.Entity<EventRegistration>(e =>
@@ -58,9 +77,8 @@ public class AppDBContext : DbContext
         b.Entity<EventEquipment>(e =>
         {
             e.Property(x => x.Notes).HasMaxLength(500);
-            e.Property(x => x.RejectionReason).HasMaxLength(500);
-            e.HasOne(x => x.CampusEvent).WithMany(c => c.EquipmentItems)
-             .HasForeignKey(x => x.CampusEventId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.DepartmentRequest).WithMany(d => d.EquipmentItems)
+             .HasForeignKey(x => x.DepartmentRequestId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Equipment).WithMany()
              .HasForeignKey(x => x.EquipmentId).OnDelete(DeleteBehavior.Restrict);
         });
@@ -87,7 +105,7 @@ public class AppDBContext : DbContext
         return list;
     }
 
-    // Edit this list to add/remove equipment. Keep the existing Ids stable once migrated.
+    // Keep the existing Ids stable once migrated.
     private static List<Equipment> SeedEquipment()
     {
         var list = new List<Equipment>();
@@ -95,7 +113,6 @@ public class AppDBContext : DbContext
         void Add(DepartmentType d, string name, bool other = false) =>
             list.Add(new Equipment { Id = id++, Name = name, Department = d, IsOther = other });
 
-        // Auxiliary
         Add(DepartmentType.Auxiliary, "Speaker");
         Add(DepartmentType.Auxiliary, "Microphone");
         Add(DepartmentType.Auxiliary, "Table");
@@ -103,7 +120,6 @@ public class AppDBContext : DbContext
         Add(DepartmentType.Auxiliary, "Podium");
         Add(DepartmentType.Auxiliary, "Others", other: true);
 
-        // ITMC
         Add(DepartmentType.ITMC, "Computer");
         Add(DepartmentType.ITMC, "Laptop");
         Add(DepartmentType.ITMC, "HDMI Cable");

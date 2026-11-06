@@ -1,76 +1,23 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Request an Event</title>
     <link rel="stylesheet" href="/css/site.css" />
-    <style>
-        .eq-group {
-            border: 1px solid var(--line);
-            border-radius: 10px;
-            padding: 12px 14px;
-            margin-top: 10px;
-            background: #fafbfd;
-        }
-
-            .eq-group h3 {
-                margin: 0 0 6px;
-                font-size: 1rem;
-                color: var(--blue);
-            }
-
-        .eq-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            padding: 6px 0;
-            border-bottom: 1px dashed var(--line);
-        }
-
-            .eq-row:last-child {
-                border-bottom: 0;
-            }
-
-            .eq-row label {
-                margin: 0;
-                font-weight: 600;
-                min-width: 140px;
-                display: flex;
-                gap: 6px;
-                align-items: center;
-            }
-
-            .eq-row input[type=number] {
-                width: 80px;
-                padding: 6px 8px;
-                border: 1px solid #cbd2e0;
-                border-radius: 8px;
-                font: inherit;
-            }
-
-            .eq-row input[type=text] {
-                flex: 1;
-                min-width: 200px;
-                padding: 6px 8px;
-                border: 1px solid #cbd2e0;
-                border-radius: 8px;
-                font: inherit;
-            }
-    </style>
+    <link rel="stylesheet" href="/css/board.css" />
 </head>
 <body>
     <header class="top"><a class="brand" href="/index.html">UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
-    <main style="max-width:760px">
+    <main style="max-width:820px">
         <div class="card">
             <h1>Request an Event</h1>
-            <form id="form">
-                <label>Event title</label><input type="text" id="title" required maxlength="200" />
-                <label>Requester name</label><input type="text" id="requesterName" required />
-                <label>Department / Organization / Club</label><input type="text" id="organization" required />
-                <label>Role</label>
-                <select id="role" required><option value="">Select…</option><option value="Faculty">Faculty</option><option value="Student">Student</option></select>
+            <form id="form" novalidate>
+                <label for="title">Event title</label><input type="text" id="title" maxlength="200" />
+                <label for="requesterName">Requester name</label><input type="text" id="requesterName" maxlength="150" />
+                <label for="organization">Department / Organization / Club</label><input type="text" id="organization" maxlength="150" />
+                <label for="role">Role</label>
+                <select id="role"><option value="">Select…</option><option value="Faculty">Faculty</option><option value="Student">Student</option></select>
 
                 <label>Target audience</label>
                 <div class="checks">
@@ -80,21 +27,14 @@
                     <label><input type="checkbox" class="aud" value="8" /> College</label>
                 </div>
 
-                <label>Purpose</label><textarea id="purpose" required maxlength="2000"></textarea>
+                <label for="capacity">Expected attendees (capacity)</label><input type="number" id="capacity" min="1" max="10000" value="50" />
+                <label for="purpose">Purpose</label><textarea id="purpose" maxlength="2000"></textarea>
+                <label for="start">Start</label><input type="datetime-local" id="start" />
+                <label for="end">End</label><input type="datetime-local" id="end" />
 
-                <label>Facility</label><select id="facilityId" required></select>
-                <div class="hint" id="route"></div>
-
-                <label>Start</label><input type="datetime-local" id="start" required />
-                <label>End</label><input type="datetime-local" id="end" required />
-
-                <label>Endorsement letter <span id="reqTag" class="tag">Required</span></label>
-                <input type="file" id="file" accept=".jpg,.jpeg,.png,.pdf,.docx" />
-                <div class="hint">Image (JPG/PNG), PDF or DOCX, max 5 MB. Optional for College facilities (Ms. Judith).</div>
-
-                <h2 style="margin-top:24px">Equipment (optional)</h2>
-                <div class="hint">Each office reviews its own equipment. Tick what you need and set the quantity. For “Others”, describe the item.</div>
-                <div id="equipBox"></div>
+                <h2 style="margin-top:26px">Which offices do you need?</h2>
+                <div class="hint">Tick each office you need. Then choose its facilities, its equipment, and upload that office's own endorsement letter.</div>
+                <div id="deptBox"><div class="spinner">Loading…</div></div>
 
                 <div class="msg" id="msg"></div>
                 <div style="margin-top:14px"><button class="btn" type="submit" id="submitBtn">Submit request</button> <a class="btn ghost" href="/dashboard.html">Back</a></div>
@@ -102,94 +42,6 @@
         </div>
     </main>
     <script src="/js/api.js"></script>
-    <script>
-        if (!Auth.require()) throw new Error('auth');
-        renderNav(document.getElementById('nav'));
-        requesterName.value = Auth.user.fullName;
-        let facilities = [];
-
-        (async () => {
-            const [fac, equip] = await Promise.all([api('/api/facilities'), api('/api/equipment')]);
-            facilities = fac;
-
-            const groups = {};
-            facilities.forEach(f => (groups[f.approvingOffice] ||= []).push(f));
-            facilityId.innerHTML = Object.entries(groups).map(([office, list]) =>
-                `<optgroup label="${esc(office)}">${list.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('')}</optgroup>`).join('');
-            updateRoute();
-
-            renderEquipment(equip);
-        })().catch(err => showMsg(msg, err.message, false));
-
-        function renderEquipment(list) {
-            const byOffice = {};
-            list.forEach(x => (byOffice[x.approvingOffice] ||= []).push(x));
-            equipBox.innerHTML = Object.entries(byOffice).map(([office, items]) => `
-          <div class="eq-group">
-            <h3>${esc(office)} equipment</h3>
-            ${items.map(x => `
-              <div class="eq-row" data-id="${x.id}" data-other="${x.isOther}">
-                <label><input type="checkbox" class="eqchk" /> ${esc(x.name)}</label>
-                <input type="number" class="eqqty" min="1" max="100" value="1" disabled title="Quantity" />
-                ${x.isOther ? '<input type="text" class="eqnote" maxlength="500" placeholder="Describe what you need" disabled />' : ''}
-              </div>`).join('')}
-          </div>`).join('');
-
-            equipBox.querySelectorAll('.eq-row').forEach(row => {
-                const chk = row.querySelector('.eqchk');
-                chk.onchange = () => row.querySelectorAll('.eqqty, .eqnote').forEach(el => el.disabled = !chk.checked);
-            });
-        }
-
-        function updateRoute() {
-            const f = facilities.find(x => x.id == facilityId.value);
-            if (!f) return;
-            route.textContent = 'Facility will be reviewed by: ' + f.approvingOffice;
-            reqTag.textContent = f.endorsementOptional ? 'Optional' : 'Required';
-            reqTag.className = 'tag ' + (f.endorsementOptional ? 'approved' : 'pending');
-        }
-        facilityId.onchange = updateRoute;
-
-        form.addEventListener('submit', async e => {
-            e.preventDefault();
-            const audience = [...document.querySelectorAll('.aud:checked')].reduce((s, c) => s + Number(c.value), 0);
-            if (!audience) return showMsg(msg, 'Please select at least one target audience.', false);
-
-            const fd = new FormData();
-            fd.append('Title', title.value);
-            fd.append('RequesterName', requesterName.value);
-            fd.append('Organization', organization.value);
-            fd.append('Role', role.value);
-            fd.append('TargetAudience', audience);
-            fd.append('Purpose', purpose.value);
-            fd.append('FacilityId', facilityId.value);
-            fd.append('StartTime', start.value);
-            fd.append('EndTime', end.value);
-            if (file.files[0]) fd.append('Endorsement', file.files[0]);
-
-            // Equipment: Equipment[0].EquipmentId, Equipment[0].Quantity, Equipment[0].Notes ...
-            let i = 0;
-            for (const row of equipBox.querySelectorAll('.eq-row')) {
-                if (!row.querySelector('.eqchk').checked) continue;
-                const note = row.querySelector('.eqnote');
-                if (row.dataset.other === 'true' && !(note && note.value.trim()))
-                    return showMsg(msg, 'Please describe the "Others" equipment you need.', false);
-                fd.append(`Equipment[${i}].EquipmentId`, row.dataset.id);
-                fd.append(`Equipment[${i}].Quantity`, row.querySelector('.eqqty').value || '1');
-                if (note) fd.append(`Equipment[${i}].Notes`, note.value.trim());
-                i++;
-            }
-
-            submitBtn.disabled = true;
-            try {
-                await api('/api/events/request', { method: 'POST', form: fd });
-                showMsg(msg, 'Request submitted! The slot is on hold while it is reviewed.', true);
-                form.reset(); requesterName.value = Auth.user.fullName;
-                equipBox.querySelectorAll('.eqqty, .eqnote').forEach(el => el.disabled = true);
-                updateRoute();
-            } catch (err) { showMsg(msg, err.message, false); }
-            finally { submitBtn.disabled = false; }
-        });
-    </script>
+    <script src="/js/request.js"></script>
 </body>
 </html>

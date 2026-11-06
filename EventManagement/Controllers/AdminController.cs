@@ -1,4 +1,4 @@
-﻿using EventManagement.Model.Domain;
+using EventManagement.Model.Domain;
 using EventManagement.Model.DTO;
 using EventManagement.Service;
 using Microsoft.AspNetCore.Authorization;
@@ -23,6 +23,9 @@ public class AdminController : ControllerBase
     [HttpGet("requests")]
     public async Task<IActionResult> Requests([FromQuery] EventStatus status = EventStatus.Pending)
         => Ok(await _events.GetRequestsForAdminAsync(Dept, status));
+
+    [HttpGet("reports/events")]
+    public async Task<IActionResult> Report() => Ok(await _events.GetReportAsync(Dept));
 
     [HttpPost("requests/{id:int}/approve")]
     public async Task<IActionResult> Approve(int id)
