@@ -6,7 +6,7 @@ Domain: **Event Ticketing & Registration** (facility booking + registration with
 ## What it does
 - Bulletin board (cork board) + shared facility calendar on the landing page
 - Sign in with an Angelicum account (`@ustangelicum.edu.ph`)
-- **Request an Event**: tick the offices you need (Auxiliary, ITMC, College, TVET); per office choose facilities, equipment and upload that office's endorsement letter (optional only for College)
+- **Request an Event**: tick the offices you need (Auxiliary, ITMC, College, TVET, Library); per office choose facilities, equipment and upload that office's endorsement letter (optional only for College)
 - Each office approves/rejects **only its own part**; the event is Approved when every office approved, Rejected when any rejects
 - **Register for an Event**: must match the event's target audience; registrations can never exceed the event capacity
 - Double booking of a facility is refused (409)
@@ -46,6 +46,7 @@ dotnet run
 | Admin – ITMC | itmc@ustangelicum.edu.ph | Admin@2026 |
 | Admin – College (Ms. Judith) | judith@ustangelicum.edu.ph | Admin@2026 |
 | Admin – TVET (Ms. Chavez) | chavez@ustangelicum.edu.ph | Admin@2026 |
+| Admin – Library | library@ustangelicum.edu.ph | Admin@2026 |
 | Attendee / Organizer | student@ustangelicum.edu.ph | Student@2026 |
 
 Seed data: 29 facilities, 12 equipment items, and one approved sample event (200 seats).

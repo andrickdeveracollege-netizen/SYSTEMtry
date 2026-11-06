@@ -102,6 +102,8 @@ public class AppDBContext : DbContext
             "CINCO", "SEIS", "CARITAS", "FORTITUDO", "JUSTITIA");
         Add(DepartmentType.TVET, "Single Room", "Double Room", "Classrooms", "FBS Lab", "BBP Lab",
             "Cookery Lab", "Ange Cafe");
+        // Appended last so the existing facility Ids stay the same. Add more Library rooms here.
+        Add(DepartmentType.Library, "IMC", "Discussion Room");
         return list;
     }
 

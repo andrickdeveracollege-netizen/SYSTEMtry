@@ -1,6 +1,6 @@
 namespace EventManagement.Model.Domain;
 
-public enum DepartmentType { Auxiliary = 1, ITMC = 2, College = 3, TVET = 4 }
+public enum DepartmentType { Auxiliary = 1, ITMC = 2, College = 3, TVET = 4, Library = 5 }
 
 // Flags so an event can target several levels. A registrant picks exactly one value.
 [Flags]

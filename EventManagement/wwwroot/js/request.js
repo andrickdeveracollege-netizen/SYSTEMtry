@@ -11,7 +11,8 @@ const OFFICES = [
   { key: 'Auxiliary', label: 'Auxiliary', letterOptional: false },
   { key: 'ITMC', label: 'ITMC (Technical)', letterOptional: false },
   { key: 'College', label: 'College (Ms. Judith)', letterOptional: true },
-  { key: 'TVET', label: 'TVET (Ms. Chavez)', letterOptional: false }
+  { key: 'TVET', label: 'TVET (Ms. Chavez)', letterOptional: false },
+  { key: 'Library', label: 'Library', letterOptional: false }
 ];
 
 document.getElementById('requesterName').value = Auth.user.fullName;

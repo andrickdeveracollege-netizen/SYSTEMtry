@@ -1,4 +1,4 @@
-﻿using EventManagement.Model.Domain;
+using EventManagement.Model.Domain;
 using EventManagement.Model.DTO;
 
 namespace EventManagement.Mapper;
@@ -11,6 +11,7 @@ public static class FacilityMapper
         DepartmentType.ITMC => "ITMC (Technical)",
         DepartmentType.College => "College (Ms. Judith)",
         DepartmentType.TVET => "TVET (Ms. Chavez)",
+        DepartmentType.Library => "Library",
         _ => d.ToString()
     };
 
