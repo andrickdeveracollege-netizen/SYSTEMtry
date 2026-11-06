@@ -12,6 +12,15 @@
 .side {
     position: sticky;
     top: 16px;
+    align-self: stretch;
+    display: flex;
+}
+
+    .side > .card {
+        width: 100%;
+        min-height: 560px;
+        display: flex;
+        flex-direction: column;
 }
 
     .side h2 {
@@ -28,9 +37,14 @@
         flex-direction: column;
         gap: 8px;
         margin-top: 8px;
+        flex: 1;
     }
 
         .side .stack .btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             text-align: center;
         }
 
@@ -284,6 +298,21 @@
     .side {
         order: -1;
         position: static;
+        display: block;
+    }
+
+    .side > .card {
+        min-height: 0;
+        height: auto;
+        display: block;
+    }
+
+    .side .stack {
+        flex: none;
+    }
+
+        .side .stack .btn {
+            flex: none;
     }
 
     .cork {

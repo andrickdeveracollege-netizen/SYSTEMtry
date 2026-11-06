@@ -14,6 +14,122 @@
             background: #fafbfd;
         }
 
+        .eq-group-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--blue);
+            font-weight: 700;
+        }
+
+        .eq-group-items {
+            display: none;
+        }
+
+            .eq-group-items.open {
+                display: block;
+            }
+
+        .department-group {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-top: 10px;
+            background: #fafbfd;
+        }
+
+            .department-group h3 {
+                margin: 0 0 8px;
+                color: var(--blue);
+            }
+
+        .facility-option {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin: 6px 0;
+            font-weight: 600;
+        }
+
+        .department-support {
+            margin-top: 24px;
+        }
+
+        .department-support-options {
+            margin-bottom: 8px;
+        }
+
+        .datetime-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px 12px;
+            padding: 18px;
+            margin-top: 20px;
+            border: 1px solid #d5e4ec;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #eef8fb, #f8fbff);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
+        }
+
+        .datetime-grid input {
+            background: #fff;
+            width: 100%;
+            border: 1px solid #bfd4df;
+            border-radius: 12px;
+            min-height: 44px;
+            box-shadow: 0 3px 8px rgba(11,61,145,.06);
+        }
+
+        .datetime-grid input[type=checkbox] {
+            width: 18px;
+            height: 18px;
+            min-height: 18px;
+            margin: 0;
+            box-shadow: none;
+        }
+
+        .datetime-grid label {
+            color: var(--blue);
+            font-weight: 700;
+        }
+
+        .same-date-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            color: var(--muted) !important;
+            font-size: .82rem;
+            font-weight: 400 !important;
+        }
+
+        .support-selection {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 2px solid var(--line);
+        }
+
+        .support-selection,
+        #equipmentSection {
+            padding: 18px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 6px 18px rgba(16,24,40,.06);
+        }
+
+        #audienceChecks {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        @media (max-width:560px) {
+            .datetime-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
             .eq-group h3 {
                 margin: 0 0 6px;
                 font-size: 1rem;
@@ -61,7 +177,7 @@
     </style>
 </head>
 <body>
-    <header class="top"><a class="brand" href="/index.html">UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
+    <header class="top"><a class="brand" href="/index.html"><img class="brand-logo" src="/images/angelicum-logo.png" alt="UST Angelicum College logo" />UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
     <main style="max-width:760px">
         <div class="card">
             <h1>Request an Event</h1>
@@ -69,11 +185,12 @@
                 <label>Event title</label><input type="text" id="title" required maxlength="200" />
                 <label>Requester name</label><input type="text" id="requesterName" required />
                 <label>Department / Organization / Club</label><input type="text" id="organization" required />
+
                 <label>Role</label>
                 <select id="role" required><option value="">Select…</option><option value="Faculty">Faculty</option><option value="Student">Student</option></select>
 
                 <label>Target audience</label>
-                <div class="checks">
+                <div id="audienceChecks" class="checks">
                     <label><input type="checkbox" class="aud" value="1" /> Elementary</label>
                     <label><input type="checkbox" class="aud" value="2" /> JHS</label>
                     <label><input type="checkbox" class="aud" value="4" /> SHS</label>
@@ -82,25 +199,53 @@
 
                 <label>Purpose</label><textarea id="purpose" required maxlength="2000"></textarea>
 
-                <label>Facility</label><select id="facilityId" required></select>
-                <div class="hint" id="route"></div>
+                <div class="datetime-grid">
+                    <div><label>Start date</label><input type="date" id="startDate" required /></div>
+                    <div><label>Start time</label><input type="time" id="startTime" required /></div>
+                    <div>
+                        <label>End date</label>
+                        <input type="date" id="endDate" required />
+                        <label class="same-date-option"><input type="checkbox" id="sameDate" /> Same date as start</label>
+                    </div>
+                    <div><label>End time</label><input type="time" id="endTime" required /></div>
+                </div>
 
-                <label>Start</label><input type="datetime-local" id="start" required />
-                <label>End</label><input type="datetime-local" id="end" required />
+                <div class="support-selection">
+                    <label>Department needing support</label>
+                <select id="departmentSelect" required onchange="document.getElementById('facilityLabel').style.display = this.value ? 'block' : 'none'">
+                        <option value="">Select a department…</option>
+                    </select>
+                    <label id="facilityLabel" style="display:none">Facility</label>
+                    <div id="facilityGroups"></div>
+                    <input type="hidden" id="facilityId" required />
+                    <div class="hint" id="route"></div>
+                </div>
 
-                <label>Endorsement letter <span id="reqTag" class="tag">Required</span></label>
-                <input type="file" id="file" accept=".jpg,.jpeg,.png,.pdf,.docx" />
-                <div class="hint">Image (JPG/PNG), PDF or DOCX, max 5 MB. Optional for College facilities (Ms. Judith).</div>
+                <div id="equipmentSection" style="display:none">
+                    <h2 style="margin-top:24px">Equipment (optional)</h2>
+                    <div class="hint">Each office reviews its own equipment. Tick what you need and set the quantity.</div>
+                    <div id="equipBox"></div>
+                </div>
 
-                <h2 style="margin-top:24px">Equipment (optional)</h2>
-                <div class="hint">Each office reviews its own equipment. Tick what you need and set the quantity. For “Others”, describe the item.</div>
-                <div id="equipBox"></div>
+<div id="endorsementBox" style="display: block;">
+            <label>Endorsement letter</label>
+            <input type="file" id="file" accept=".jpg,.jpeg,.png,.pdf,.docx" style="display: block;" />
+            <div class="hint">Image (JPG/PNG), PDF or DOCX, max 5 MB.</div>
 
                 <div class="msg" id="msg"></div>
                 <div style="margin-top:14px"><button class="btn" type="submit" id="submitBtn">Submit request</button> <a class="btn ghost" href="/dashboard.html">Back</a></div>
             </form>
         </div>
     </main>
+    <footer class="site-footer">
+        <div class="footer-contact">
+            <h2>CONTACT</h2>
+            <p>📍 112 Sen. Mariano J. Cuenco, Barangay Sto. Domingo,<br />Quezon City, 1114 Philippines</p>
+            <p>📞 (02) 8732 4243 or 8732 3725</p>
+            <p>✉ info@ustangelicum.edu.ph</p>
+        </div>
+        <div class="footer-bottom">© 2026 <strong>UST Angelicum College</strong> — All Rights Reserved</div>
+    </footer>
     <script src="/js/api.js"></script>
     <script>
         if (!Auth.require()) throw new Error('auth');
@@ -108,17 +253,68 @@
         requesterName.value = Auth.user.fullName;
         let facilities = [];
 
+        sameDate.onchange = () => {
+            endDate.disabled = sameDate.checked;
+            if (sameDate.checked) endDate.value = startDate.value;
+        };
+        startDate.onchange = () => {
+            if (sameDate.checked) endDate.value = startDate.value;
+        };
+
         (async () => {
-            const [fac, equip] = await Promise.all([api('/api/facilities'), api('/api/equipment')]);
+            // Equipment is seeded with stable IDs in AppDBContext. Keep the
+            // request form usable even when the equipment GET endpoint fails.
+            const fac = await api('/api/facilities');
             facilities = fac;
 
             const groups = {};
             facilities.forEach(f => (groups[f.approvingOffice] ||= []).push(f));
-            facilityId.innerHTML = Object.entries(groups).map(([office, list]) =>
-                `<optgroup label="${esc(office)}">${list.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('')}</optgroup>`).join('');
-            updateRoute();
+            const officeNames = {
+                College: 'HED Area (Ms. Judith)',
+                TVET: 'TVET (Ms. Chavez)'
+            };
+            const equipment = [
+                { id: 3, name: 'Table', approvingOffice: 'Auxiliary', isOther: false },
+                { id: 1, name: 'Speaker', approvingOffice: 'Auxiliary', isOther: false },
+                { id: 2, name: 'Microphone', approvingOffice: 'Auxiliary', isOther: false },
+                { id: 6, name: 'Others', approvingOffice: 'Auxiliary', isOther: true },
+                { id: 7, name: 'Computer', approvingOffice: 'ITMC', isOther: false },
+                { id: 8, name: 'Laptop', approvingOffice: 'ITMC', isOther: false },
+                { id: 11, name: 'TV', approvingOffice: 'ITMC', isOther: false },
+                { id: 12, name: 'Others', approvingOffice: 'ITMC', isOther: true },
+            ];
 
-            renderEquipment(equip);
+            departmentSelect.insertAdjacentHTML('beforeend', Object.keys(groups).map(office =>
+                `<option value="${esc(office)}">${esc(officeNames[office] || office)}</option>`
+            ).join(''));
+            departmentSelect.onchange = () => {
+                facilityLabel.style.display = departmentSelect.value ? 'block' : 'none';
+                renderDepartment();
+            };
+            renderDepartment();
+
+            function renderDepartment() {
+                const selected = departmentSelect.value;
+                equipmentSection.style.display = facilityId.value ? 'block' : 'none';
+                const selectedFacility = facilityId.value;
+                const selectedFacilityOffice = facilities.find(f => String(f.id) === String(selectedFacility))?.approvingOffice;
+                if (selectedFacilityOffice && selectedFacilityOffice !== selected) facilityId.value = '';
+
+                facilityGroups.innerHTML = selected ? `
+                    <section class="department-group">
+                        <h3>${esc(officeNames[selected] || selected)}</h3>
+                        ${groups[selected].map(f => `<label class="facility-option"><input type="radio" name="facility" value="${f.id}" data-office="${esc(f.approvingOffice)}" ${String(f.id) === String(facilityId.value) ? 'checked' : ''} /> ${esc(f.name)}</label>`).join('')}
+                    </section>` : '';
+
+                facilityGroups.querySelectorAll('input[name=facility]').forEach(r => r.onchange = () => {
+                    facilityId.value = r.value;
+                    equipmentSection.style.display = 'block';
+                    renderEquipment(equipment);
+                    updateRoute();
+                });
+                renderEquipment(equipment);
+                updateRoute();
+            }
         })().catch(err => showMsg(msg, err.message, false));
 
         function renderEquipment(list) {
@@ -126,14 +322,26 @@
             list.forEach(x => (byOffice[x.approvingOffice] ||= []).push(x));
             equipBox.innerHTML = Object.entries(byOffice).map(([office, items]) => `
           <div class="eq-group">
-            <h3>${esc(office)} equipment</h3>
-            ${items.map(x => `
-              <div class="eq-row" data-id="${x.id}" data-other="${x.isOther}">
-                <label><input type="checkbox" class="eqchk" /> ${esc(x.name)}</label>
-                <input type="number" class="eqqty" min="1" max="100" value="1" disabled title="Quantity" />
-                ${x.isOther ? '<input type="text" class="eqnote" maxlength="500" placeholder="Describe what you need" disabled />' : ''}
-              </div>`).join('')}
+            <label class="eq-group-header"><input type="checkbox" class="eq-office-check" /> ${esc(office)} equipment</label>
+            <div class="eq-group-items">
+              ${items.map(x => `
+                <div class="eq-row" data-id="${x.id}" data-other="${x.isOther}">
+                  <label><input type="checkbox" class="eqchk" /> ${esc(x.name)}</label>
+                  <input type="number" class="eqqty" min="1" max="100" value="1" disabled title="Quantity" />
+                  ${x.isOther ? '<input type="text" class="eqnote" maxlength="500" placeholder="Describe what you need" disabled />' : ''}
+                </div>`).join('')}
+            </div>
           </div>`).join('');
+
+            equipBox.querySelectorAll('.eq-office-check').forEach(check => check.onchange = () => {
+                check.closest('.eq-group').querySelector('.eq-group-items').classList.toggle('open', check.checked);
+                if (!check.checked) {
+                    check.closest('.eq-group').querySelectorAll('.eqchk').forEach(item => {
+                        item.checked = false;
+                        item.dispatchEvent(new Event('change'));
+                    });
+                }
+            });
 
             equipBox.querySelectorAll('.eq-row').forEach(row => {
                 const chk = row.querySelector('.eqchk');
@@ -145,15 +353,14 @@
             const f = facilities.find(x => x.id == facilityId.value);
             if (!f) return;
             route.textContent = 'Facility will be reviewed by: ' + f.approvingOffice;
-            reqTag.textContent = f.endorsementOptional ? 'Optional' : 'Required';
-            reqTag.className = 'tag ' + (f.endorsementOptional ? 'approved' : 'pending');
         }
-        facilityId.onchange = updateRoute;
-
         form.addEventListener('submit', async e => {
             e.preventDefault();
+            if (!facilityId.value) return showMsg(msg, 'Please select a facility.', false);
             const audience = [...document.querySelectorAll('.aud:checked')].reduce((s, c) => s + Number(c.value), 0);
             if (!audience) return showMsg(msg, 'Please select at least one target audience.', false);
+            if (!startDate.value || !startTime.value || !endDate.value || !endTime.value)
+                return showMsg(msg, 'Please complete the start and end date/time.', false);
 
             const fd = new FormData();
             fd.append('Title', title.value);
@@ -163,9 +370,9 @@
             fd.append('TargetAudience', audience);
             fd.append('Purpose', purpose.value);
             fd.append('FacilityId', facilityId.value);
-            fd.append('StartTime', start.value);
-            fd.append('EndTime', end.value);
-            if (file.files[0]) fd.append('Endorsement', file.files[0]);
+            fd.append('StartTime', `${startDate.value}T${startTime.value}`);
+            fd.append('EndTime', `${endDate.value}T${endTime.value}`);
+            // if (file.files[0]) fd.append('Endorsement', file.files[0]);
 
             // Equipment: Equipment[0].EquipmentId, Equipment[0].Quantity, Equipment[0].Notes ...
             let i = 0;

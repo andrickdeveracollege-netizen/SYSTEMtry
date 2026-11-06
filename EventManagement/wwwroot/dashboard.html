@@ -4,18 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Dashboard – Event Management</title>
+    <link rel="icon" type="image/png" href="/images/angelicum-logo.png" />
     <link rel="stylesheet" href="/css/site.css" />
 </head>
 <body>
-    <header class="top"><a class="brand" href="/index.html">UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
+    <header class="top"><a class="brand" href="/index.html"><img class="brand-logo" src="/images/angelicum-logo.png" alt="UST Angelicum College logo" />UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
     <main>
         <h1 id="hello">Dashboard</h1>
-        <div class="options">
-            <div class="card"><h2>Register for an Event</h2><p class="muted">Join an approved event open to your year level.</p><a class="btn" href="/register.html">Register</a></div>
-            <div class="card"><h2>Request an Event</h2><p class="muted">Reserve a facility and submit your event for approval.</p><a class="btn gold" href="/request.html">Request</a></div>
-        </div>
-
-        <div class="card">
+        <div class="dashboard-layout">
+            <div class="card calendar-panel">
             <div class="cal-head">
                 <h2 id="monthTitle"></h2>
                 <select id="facFilter"><option value="">All facilities</option></select>
@@ -24,6 +21,12 @@
             <div class="muted" style="margin-bottom:8px"><span class="tag approved">Approved</span><span class="tag pending">Pending review (slot on hold)</span></div>
             <div id="cal" class="cal"></div>
             <div id="dayList" style="margin-top:16px"></div>
+            </div>
+
+            <div class="options">
+                <div class="card"><h2>Register for an Event</h2><p class="muted">Join an approved event open to your year level.</p><a class="btn" href="/register.html">Register</a></div>
+                <div class="card"><h2>Request an Event</h2><p class="muted">Reserve a facility and submit your event for approval.</p><a class="btn gold" href="/request.html">Request</a></div>
+            </div>
         </div>
     </main>
 

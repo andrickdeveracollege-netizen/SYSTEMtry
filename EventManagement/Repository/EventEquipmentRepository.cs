@@ -13,7 +13,10 @@ public class EventEquipmentRepository : IEventEquipmentRepository
         _db.EventEquipments.AsNoTracking()
             .Include(x => x.Equipment)
             .Include(x => x.CampusEvent).ThenInclude(c => c!.Facility)
-            .Where(x => x.Equipment!.Department == dept && x.Status == status)
+            .Where(x => x.Equipment != null
+                     && x.CampusEvent != null
+                     && x.Equipment.Department == dept
+                     && x.Status == status)
             .OrderBy(x => x.CampusEvent!.StartTime)
             .ToListAsync();
 

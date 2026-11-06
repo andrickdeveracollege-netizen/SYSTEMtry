@@ -54,10 +54,44 @@ const isoLocal = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDa
 function showMsg(el, text, ok) { el.textContent = text; el.className = 'msg ' + (ok ? 'ok' : 'err'); }
 
 function renderNav(el) {
+  const brand = document.querySelector('header.top .brand');
+  if (brand && !brand.querySelector('.brand-logo')) {
+    brand.insertAdjacentHTML('afterbegin', '<img class="brand-logo" src="/images/angelicum-logo.png" alt="UST Angelicum College logo" />');
+  }
   const u = Auth.user;
   if (!u) { el.innerHTML = '<a href="/index.html">Home</a>'; return; }
-  el.innerHTML = `<a href="/index.html">Bulletin</a><a href="/dashboard.html">Dashboard</a>` +
+  el.innerHTML = `<a href="/index.html">Bulletin</a>` +
+    `<div class="nav-dropdown"><a class="nav-dropdown-toggle" href="/dashboard.html">Dashboard ▾</a><div class="nav-dropdown-menu"><a href="/register.html">Register for an Event</a><a href="/request.html">Request an Event</a></div></div>` +
     (u.isAdmin ? '<a href="/admin.html">Approvals</a>' : '') +
-    `<span>${esc(u.fullName)}</span><a href="#" id="logoutLink">Sign out</a>`;
-  document.getElementById('logoutLink').onclick = e => { e.preventDefault(); Auth.logout(); };
+    `<a href="#" id="logoutLink">Sign out</a>`;
+  document.getElementById('logoutLink').onclick = async e => {
+    e.preventDefault();
+    if (await confirmLogout()) Auth.logout();
+  };
+  for (const a of el.querySelectorAll('a')) {
+    if (a.href && new URL(a.href).pathname === location.pathname) a.classList.add('active');
+  }
+
+function confirmLogout() {
+  return new Promise(resolve => {
+    const modal = document.createElement('div');
+    modal.className = 'logout-modal';
+    modal.innerHTML = `
+      <div class="logout-dialog" role="dialog" aria-modal="true" aria-labelledby="logoutTitle">
+        <div class="logout-icon">!</div>
+        <h2 id="logoutTitle">Sign out?</h2>
+        <p>Are you sure you want to sign out?</p>
+        <div class="logout-actions">
+          <button type="button" class="logout-cancel">Cancel</button>
+          <button type="button" class="logout-confirm">Sign out</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+
+    const close = result => { modal.remove(); resolve(result); };
+    modal.querySelector('.logout-cancel').onclick = () => close(false);
+    modal.querySelector('.logout-confirm').onclick = () => close(true);
+    modal.onclick = e => { if (e.target === modal) close(false); };
+  });
+}
 }
