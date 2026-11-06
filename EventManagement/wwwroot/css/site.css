@@ -334,6 +334,13 @@ textarea {
         margin-top: 10px;
     }
 
+/* Right-side event action card */
+.actions,
+.action-cards,
+.home-actions {
+    justify-content: flex-end;
+}
+
 @media (max-width:700px) {
     .cal .day {
         min-height: 64px;
