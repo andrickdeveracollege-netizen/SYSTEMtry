@@ -53,6 +53,10 @@ namespace EventManagement.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<string>("OtherFacilityName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Purpose")
                         .IsRequired()
                         .HasMaxLength(2000)
@@ -99,6 +103,159 @@ namespace EventManagement.Migrations
                     b.HasIndex("FacilityId", "StartTime", "EndTime");
 
                     b.ToTable("Events");
+                });
+
+            modelBuilder.Entity("EventManagement.Model.Domain.Equipment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Department")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsOther")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Equipments");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Department = 1,
+                            IsOther = false,
+                            Name = "Speaker"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Department = 1,
+                            IsOther = false,
+                            Name = "Microphone"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Department = 1,
+                            IsOther = false,
+                            Name = "Table"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Department = 1,
+                            IsOther = false,
+                            Name = "Chair"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Department = 1,
+                            IsOther = false,
+                            Name = "Podium"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Department = 1,
+                            IsOther = true,
+                            Name = "Others"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Department = 2,
+                            IsOther = false,
+                            Name = "Computer"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Department = 2,
+                            IsOther = false,
+                            Name = "Laptop"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Department = 2,
+                            IsOther = false,
+                            Name = "HDMI Cable"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Department = 2,
+                            IsOther = false,
+                            Name = "Wi-Fi Access"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Department = 2,
+                            IsOther = false,
+                            Name = "Projector"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Department = 2,
+                            IsOther = true,
+                            Name = "Others"
+                        });
+                });
+
+            modelBuilder.Entity("EventManagement.Model.Domain.EventEquipment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CampusEventId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EquipmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampusEventId");
+
+                    b.HasIndex("EquipmentId");
+
+                    b.ToTable("EventEquipments");
                 });
 
             modelBuilder.Entity("EventManagement.Model.Domain.EventRegistration", b =>
@@ -157,7 +314,7 @@ namespace EventManagement.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("Department", "Name")
                         .IsUnique();
 
                     b.ToTable("Facilities");
@@ -336,6 +493,30 @@ namespace EventManagement.Migrations
                             Id = 29,
                             Department = 4,
                             Name = "Ange Cafe"
+                        },
+                        new
+                        {
+                            Id = 30,
+                            Department = 1,
+                            Name = "Others"
+                        },
+                        new
+                        {
+                            Id = 31,
+                            Department = 2,
+                            Name = "Others"
+                        },
+                        new
+                        {
+                            Id = 32,
+                            Department = 3,
+                            Name = "Others"
+                        },
+                        new
+                        {
+                            Id = 33,
+                            Department = 4,
+                            Name = "Others"
                         });
                 });
 
@@ -387,6 +568,25 @@ namespace EventManagement.Migrations
                     b.Navigation("Facility");
                 });
 
+            modelBuilder.Entity("EventManagement.Model.Domain.EventEquipment", b =>
+                {
+                    b.HasOne("EventManagement.Model.Domain.CampusEvent", "CampusEvent")
+                        .WithMany("EquipmentItems")
+                        .HasForeignKey("CampusEventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EventManagement.Model.Domain.Equipment", "Equipment")
+                        .WithMany()
+                        .HasForeignKey("EquipmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CampusEvent");
+
+                    b.Navigation("Equipment");
+                });
+
             modelBuilder.Entity("EventManagement.Model.Domain.EventRegistration", b =>
                 {
                     b.HasOne("EventManagement.Model.Domain.CampusEvent", "CampusEvent")
@@ -400,6 +600,8 @@ namespace EventManagement.Migrations
 
             modelBuilder.Entity("EventManagement.Model.Domain.CampusEvent", b =>
                 {
+                    b.Navigation("EquipmentItems");
+
                     b.Navigation("Registrations");
                 });
 

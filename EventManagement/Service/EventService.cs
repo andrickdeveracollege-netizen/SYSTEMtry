@@ -55,6 +55,11 @@ public class EventService : IEventService
 
         var facility = await _facilities.GetByIdAsync(dto.FacilityId)
                        ?? throw new ServiceException("Selected facility does not exist.");
+        bool isOtherFacility = string.Equals(facility.Name, "Others", StringComparison.OrdinalIgnoreCase);
+        string? otherFacilityName = dto.OtherFacilityName?.Trim();
+        if (isOtherFacility && string.IsNullOrWhiteSpace(otherFacilityName))
+            throw new ServiceException("Please specify the facility name for 'Others'.");
+        if (!isOtherFacility) otherFacilityName = null;
 
         // Double-booking guard: same facility + overlapping time against pending OR approved events
         if (await _events.HasConflictAsync(facility.Id, dto.StartTime, dto.EndTime, approvedOnly: false))
@@ -85,6 +90,7 @@ public class EventService : IEventService
             TargetAudience = dto.TargetAudience,
             Purpose = dto.Purpose.Trim(),
             FacilityId = facility.Id,
+            OtherFacilityName = otherFacilityName,
             StartTime = dto.StartTime,
             EndTime = dto.EndTime,
             Status = EventStatus.Pending,

@@ -12,6 +12,7 @@ public class EventRequestDto
     public YearLevel TargetAudience { get; set; }
     [Required, StringLength(2000)] public string Purpose { get; set; } = "";
     public int FacilityId { get; set; }
+    [StringLength(100)] public string? OtherFacilityName { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
     public IFormFile? Endorsement { get; set; }

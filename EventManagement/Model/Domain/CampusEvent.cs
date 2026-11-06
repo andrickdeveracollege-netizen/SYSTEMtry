@@ -14,6 +14,7 @@ public class CampusEvent
 
     public int FacilityId { get; set; }
     public Facility? Facility { get; set; }
+    public string? OtherFacilityName { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
 

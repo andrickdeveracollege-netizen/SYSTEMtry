@@ -26,7 +26,7 @@ public class AppDBContext : DbContext
         b.Entity<Facility>(e =>
         {
             e.Property(x => x.Name).HasMaxLength(100).IsRequired();
-            e.HasIndex(x => x.Name).IsUnique();
+            e.HasIndex(x => new { x.Department, x.Name }).IsUnique();
         });
 
         b.Entity<CampusEvent>(e =>
@@ -36,6 +36,7 @@ public class AppDBContext : DbContext
             e.Property(x => x.RequesterEmail).HasMaxLength(200).IsRequired();
             e.Property(x => x.Organization).HasMaxLength(150).IsRequired();
             e.Property(x => x.Purpose).HasMaxLength(2000).IsRequired();
+            e.Property(x => x.OtherFacilityName).HasMaxLength(100);
             e.HasOne(x => x.Facility).WithMany(f => f.Events)
              .HasForeignKey(x => x.FacilityId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.FacilityId, x.StartTime, x.EndTime });
@@ -84,6 +85,10 @@ public class AppDBContext : DbContext
             "CINCO", "SEIS", "CARITAS", "FORTITUDO", "JUSTITIA");
         Add(DepartmentType.TVET, "Single Room", "Double Room", "Classrooms", "FBS Lab", "BBP Lab",
             "Cookery Lab", "Ange Cafe");
+        Add(DepartmentType.Auxiliary, "Others");
+        Add(DepartmentType.ITMC, "Others");
+        Add(DepartmentType.College, "Others");
+        Add(DepartmentType.TVET, "Others");
         return list;
     }
 

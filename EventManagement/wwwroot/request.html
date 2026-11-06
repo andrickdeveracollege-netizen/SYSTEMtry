@@ -218,6 +218,10 @@
                     <label id="facilityLabel" style="display:none">Facility</label>
                     <div id="facilityGroups"></div>
                     <input type="hidden" id="facilityId" required />
+                    <div id="otherFacilityBox" style="display:none">
+                        <label for="otherFacilityName">Specify the facility</label>
+                        <input type="text" id="otherFacilityName" maxlength="100" placeholder="Enter the facility name" />
+                    </div>
                     <div class="hint" id="route"></div>
                 </div>
 
@@ -252,6 +256,8 @@
         renderNav(document.getElementById('nav'));
         requesterName.value = Auth.user.fullName;
         let facilities = [];
+        const otherFacilityBox = document.getElementById('otherFacilityBox');
+        const otherFacilityName = document.getElementById('otherFacilityName');
 
         sameDate.onchange = () => {
             endDate.disabled = sameDate.checked;
@@ -280,7 +286,7 @@
                 { id: 6, name: 'Others', approvingOffice: 'Auxiliary', isOther: true },
                 { id: 7, name: 'Computer', approvingOffice: 'ITMC', isOther: false },
                 { id: 8, name: 'Laptop', approvingOffice: 'ITMC', isOther: false },
-                { id: 11, name: 'TV', approvingOffice: 'ITMC', isOther: false },
+                { id: 11, name: 'Projector', approvingOffice: 'ITMC', isOther: false },
                 { id: 12, name: 'Others', approvingOffice: 'ITMC', isOther: true },
             ];
 
@@ -351,8 +357,12 @@
 
         function updateRoute() {
             const f = facilities.find(x => x.id == facilityId.value);
-            if (!f) return;
-            route.textContent = 'Facility will be reviewed by: ' + f.approvingOffice;
+            const isOtherFacility = f?.name.toLowerCase() === 'others';
+            otherFacilityBox.style.display = isOtherFacility ? 'block' : 'none';
+            otherFacilityName.required = isOtherFacility;
+            if (!isOtherFacility) otherFacilityName.value = '';
+            route.textContent = f ? 'Facility will be reviewed by: ' + f.approvingOffice : '';
+            file.required = !!f && !f.endorsementOptional;
         }
         form.addEventListener('submit', async e => {
             e.preventDefault();
@@ -370,9 +380,10 @@
             fd.append('TargetAudience', audience);
             fd.append('Purpose', purpose.value);
             fd.append('FacilityId', facilityId.value);
+            if (otherFacilityName.value.trim()) fd.append('OtherFacilityName', otherFacilityName.value.trim());
             fd.append('StartTime', `${startDate.value}T${startTime.value}`);
             fd.append('EndTime', `${endDate.value}T${endTime.value}`);
-            // if (file.files[0]) fd.append('Endorsement', file.files[0]);
+            if (file.files[0]) fd.append('Endorsement', file.files[0]);
 
             // Equipment: Equipment[0].EquipmentId, Equipment[0].Quantity, Equipment[0].Notes ...
             let i = 0;
