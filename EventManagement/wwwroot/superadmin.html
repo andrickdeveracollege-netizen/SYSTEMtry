@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Super Admin – Event Management</title>
+    <link rel="icon" type="image/png" href="/images/angelicum-logo.png" />
+    <link rel="stylesheet" href="/css/site.css" />
+    <link rel="stylesheet" href="/css/board.css" />
+</head>
+<body>
+    <header class="top"><a class="brand" href="/index.html">UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
+    <main style="max-width:980px">
+        <h1>Super admin</h1>
+        <p class="muted">Post school events, reset passwords and set positions. Offices approve requests at <a href="/admin.html">Approvals</a>.</p>
+
+        <div class="card">
+            <h2>Post a school (institutional) event</h2>
+            <p class="muted">Approved right away. No registration needed. Everyone in the school can attend.</p>
+            <form id="instForm" novalidate>
+                <label for="iTitle">Title</label><input type="text" id="iTitle" maxlength="200" />
+                <label for="iOrg">Organization / office</label><input type="text" id="iOrg" maxlength="150" value="Office of the Administrator" />
+                <label for="iPurpose">Purpose</label><textarea id="iPurpose" maxlength="2000"></textarea>
+                <label>Target audience</label>
+                <div class="checks">
+                    <label><input type="checkbox" class="iaud" value="1" checked /> Elementary</label>
+                    <label><input type="checkbox" class="iaud" value="2" checked /> JHS</label>
+                    <label><input type="checkbox" class="iaud" value="4" checked /> SHS</label>
+                    <label><input type="checkbox" class="iaud" value="8" checked /> College</label>
+                    <label><input type="checkbox" class="iaud" value="16" /> Outsiders</label>
+                </div>
+                <label for="iStart">Start</label><input type="datetime-local" id="iStart" />
+                <label for="iEnd">End</label><input type="datetime-local" id="iEnd" />
+                <label>Facilities</label>
+                <div id="iFacs"><div class="spinner">Loading…</div></div>
+                <div class="msg" id="iMsg"></div>
+                <button class="btn" type="submit" id="iBtn" style="margin-top:10px">Post event</button>
+            </form>
+        </div>
+
+        <div class="card" style="margin-top:18px">
+            <h2>Users</h2>
+            <input type="text" id="search" placeholder="Search name or email…" />
+            <div id="users"><div class="spinner">Loading…</div></div>
+        </div>
+    </main>
+    <script src="/js/api.js"></script>
+    <script src="/js/superadmin.js"></script>
+</body>
+</html>

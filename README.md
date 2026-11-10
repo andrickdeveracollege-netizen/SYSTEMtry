@@ -11,11 +11,17 @@ Domain: **Event Ticketing & Registration** (facility booking + registration with
 - **Register for an Event**: must match the event's target audience; registrations can never exceed the event capacity
 - Double booking of a facility is refused (409)
 
-## Roles
-| Role | Can do |
+## Roles (derived from the email, never chosen)
+| Email format | Role |
 |---|---|
-| Attendee / Organizer (`User`) | register, cancel own registration, request an event, edit/cancel own pending request |
-| Admin (one per office) | review requests of their own office, view letters, approve / reject, see the registrations report |
+| `firstname.surname.college@ustangelicum.edu.ph` (also `.shs` `.jhs` `.elem`) | Student of that level |
+| `firstname.surname@ustangelicum.edu.ph` (no extension) | Faculty / staff |
+| Faculty promoted by the super admin | Administrator (posts school events) |
+| Office admin (Auxiliary, ITMC, College, TVET, Library) | approve / reject / cancel for their office; cannot register or request |
+| `admin@ustangelicum.edu.ph` | Super admin: posts institutional events, resets passwords, sets positions, acts on any office |
+| Guest / outsider (no account, email only) | request or register without signing in |
+
+Rules: school requests have priority over outsiders; outsiders may book **weekends only**; only facilities big enough for the attendee count are offered; registration cannot exceed capacity; institutional events need no registration; requesters can edit, move or cancel; reset password = `Ustangelicum72`.
 
 ## Status workflow (enforced on the server)
 `Pending → Approved | Rejected`, and `Pending/Approved → Cancelled` (by the requester). Reviewed requests cannot be reviewed again; cancelled events cannot be approved.
@@ -42,14 +48,18 @@ dotnet run
 ## Test accounts
 | Role | Email | Password |
 |---|---|---|
+| Super admin | admin@ustangelicum.edu.ph | Admin@2026 |
 | Admin – Auxiliary | auxiliary@ustangelicum.edu.ph | Admin@2026 |
 | Admin – ITMC | itmc@ustangelicum.edu.ph | Admin@2026 |
 | Admin – College (Ms. Judith) | judith@ustangelicum.edu.ph | Admin@2026 |
 | Admin – TVET (Ms. Chavez) | chavez@ustangelicum.edu.ph | Admin@2026 |
 | Admin – Library | library@ustangelicum.edu.ph | Admin@2026 |
-| Attendee / Organizer | student@ustangelicum.edu.ph | Student@2026 |
+| College student | juan.delacruz.college@ustangelicum.edu.ph | Student@2026 |
+| SHS student | maria.santos.shs@ustangelicum.edu.ph | Student@2026 |
+| Faculty | pedro.reyes@ustangelicum.edu.ph | Faculty@2026 |
+| Administrator | ana.lopez@ustangelicum.edu.ph | Faculty@2026 |
 
-Seed data: 29 facilities, 12 equipment items, and one approved sample event (200 seats).
+Seed data: facilities (capacities are placeholders, edit in AppDBContext), equipment, and one approved sample event.
 
 ## Main endpoints
 | Method | Route | Who |
@@ -61,5 +71,9 @@ Seed data: 29 facilities, 12 equipment items, and one approved sample event (200
 | GET | /api/admin/requests?status=, /api/admin/requests/{id}/endorsement | Admin (own office) |
 | POST | /api/admin/requests/{id}/approve, /reject | Admin (own office) |
 | GET | /api/admin/reports/events | Admin – registrations vs capacity per event |
+| DELETE | /api/admin/events/{id} | Admin – cancel an event |
+| POST | /api/guest/events/request, /api/guest/registrations | guest (email) |
+| GET/PUT/DELETE | /api/guest/events/{id}?email=&code= | guest (manage code) |
+| GET/POST/PUT | /api/superadmin/users, /users/{id}/reset-password, /users/{id}/position, /events | Super admin |
 
 Errors are returned as `{ "message": "..." }` with 400 / 401 / 403 / 404 / 409.

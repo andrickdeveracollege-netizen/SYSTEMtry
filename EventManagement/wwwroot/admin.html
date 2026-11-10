@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Approvals – Event Management</title>
+    <link rel="icon" type="image/png" href="/images/angelicum-logo.png" />
     <link rel="stylesheet" href="/css/site.css" />
     <link rel="stylesheet" href="/css/board.css" />
 </head>
@@ -12,6 +13,13 @@
     <main style="max-width:980px">
         <h1 id="office">Approvals</h1>
         <p class="muted">You only see the part of each event that needs your office.</p>
+        <div id="officePick" style="display:none;margin-bottom:12px">
+            <label for="officeSel">Office (super admin)</label>
+            <select id="officeSel">
+                <option value="Auxiliary">Auxiliary</option><option value="ITMC">ITMC</option>
+                <option value="College">College</option><option value="TVET">TVET</option><option value="Library">Library</option>
+            </select>
+        </div>
 
         <div class="tabs" id="tabs">
             <button class="btn" data-tab="Pending" type="button">Pending</button>

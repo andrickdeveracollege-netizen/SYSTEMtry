@@ -1,6 +1,16 @@
 if (!Auth.require(true)) throw new Error('Admins only');
 renderNav(document.getElementById('nav'));
-document.getElementById('office').textContent = 'Approvals — ' + Auth.user.department + ' office';
+// Super admin picks an office; office admins are fixed to their own.
+const dept = new URLSearchParams(location.search).get('dept') || 'Auxiliary';
+const officeSel = document.getElementById('officeSel');
+const scopeQ = Auth.user.isSuperAdmin ? 'dept=' + encodeURIComponent(officeSel.value = dept) : '';
+document.getElementById('office').textContent = Auth.user.isSuperAdmin
+  ? 'Approvals — all offices' : 'Approvals — ' + Auth.user.department + ' office';
+if (Auth.user.isSuperAdmin) {
+  document.getElementById('officePick').style.display = 'block';
+  officeSel.onchange = () => { location.search = '?dept=' + officeSel.value; };
+}
+const q = (path, extra = '') => path + (path.includes('?') ? '&' : '?') + [extra, scopeQ].filter(Boolean).join('&');
 
 const list = document.getElementById('list');
 const rejectModal = document.getElementById('rejectModal');
@@ -19,27 +29,29 @@ function requestCard(r) {
   const actions = r.status === 'Pending'
     ? `<button class="btn ok" data-approve="${r.id}" type="button">Approve</button>
        <button class="btn bad" data-reject="${r.id}" type="button">Reject</button>` : '';
+  const cancel = (r.status === 'Pending' || r.status === 'Approved')
+    ? `<button class="btn bad" data-cancel="${r.eventId}" type="button">Cancel event</button>` : '';
   return `<div class="req">
-    <strong>${esc(r.title)}</strong> ${statusTag(r.status)}<br>
+    <strong>${esc(r.title)}</strong> ${statusTag(r.status)}${r.role === 'Guest' ? ' <span class="tag guest">Outsider</span>' : ''}<br>
     <span class="muted">${fmt(r.startTime)} – ${fmtTime(r.endTime)} · ${esc(r.organization)} · ${esc(r.role)} · for ${esc(r.targetAudience)}</span>
     <p>${esc(r.purpose)}</p>
     <div><b>Requester:</b> ${esc(r.requesterName)} (${esc(r.requesterEmail)})</div>
     <div><b>Facilities:</b> ${r.facilities.length ? r.facilities.map(esc).join(', ') : '—'}</div>
     <div><b>Equipment:</b> ${equipment}</div>
     ${r.rejectionReason ? `<div><b>Reason:</b> ${esc(r.rejectionReason)}</div>` : ''}
-    <div class="row">${letter}${actions}</div>
+    <div class="row">${letter}${actions}${cancel}</div>
   </div>`;
 }
 
 async function loadRequests() {
-  const rows = await api('/api/admin/requests?status=' + tab);
+  const rows = await api(q('/api/admin/requests?status=' + tab));
   list.innerHTML = rows.length ? rows.map(requestCard).join('')
     : `<div class="empty-state">No ${tab.toLowerCase()} requests.</div>`;
 }
 
 // Report: seats taken vs capacity per event (ticket report)
 async function loadReport() {
-  const rows = await api('/api/admin/reports/events');
+  const rows = await api(q('/api/admin/reports/events'));
   const total = rows.reduce((s, r) => s + r.registered, 0);
   list.innerHTML = rows.length
     ? `<div class="card"><h2>Registrations per event</h2>
@@ -71,8 +83,17 @@ document.getElementById('tabs').addEventListener('click', e => {
 });
 
 list.addEventListener('click', async e => {
-  const { approve, reject, letter } = e.target.dataset;
+  const { approve, reject, letter, cancel } = e.target.dataset;
   if (letter) { openEndorsement(letter); return; }
+  if (cancel) {
+    if (!confirm('Cancel this whole event? All offices and registrations are affected.')) return;
+    try {
+      await withBusy(e.target, () => api(`/api/admin/events/${cancel}`, { method: 'DELETE' }));
+      toast('Event cancelled.');
+      load();
+    } catch (err) { toast(err.message, false); }
+    return;
+  }
   if (reject) {
     rejectingId = reject;
     reasonInput.value = '';
