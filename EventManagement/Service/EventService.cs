@@ -22,19 +22,22 @@ public class EventService : IEventService
     private readonly IFacilityRepository _facilities;
     private readonly IEquipmentRepository _equipment;
     private readonly IWebHostEnvironment _env;
+    private readonly IConfiguration _config;
 
     public EventService(
         IEventRepository events,
         IDepartmentRequestRepository deptRequests,
         IFacilityRepository facilities,
         IEquipmentRepository equipment,
-        IWebHostEnvironment env)
+        IWebHostEnvironment env,
+        IConfiguration config)
     {
         _events = events;
         _deptRequests = deptRequests;
         _facilities = facilities;
         _equipment = equipment;
         _env = env;
+        _config = config;
     }
 
     private string UploadDir => Path.Combine(_env.ContentRootPath, "App_Data", "endorsements");
@@ -50,14 +53,15 @@ public class EventService : IEventService
 
     // ---------------------------------------------------------------- create
 
-    public async Task<EventSummaryDto> CreateRequestAsync(EventRequestDto dto, string requesterEmail)
+    public async Task<EventCreatedDto> CreateRequestAsync(EventRequestDto dto, Requester who)
     {
-        if (!Enum.IsDefined(dto.Role)) throw new ServiceException("Please select your role (Faculty or Student).");
+        if (who.IsGuest) RejectSchoolEmail(who.Email);
+
         if (dto.TargetAudience == YearLevel.None || ((int)dto.TargetAudience & ~(int)YearLevel.All) != 0)
             throw new ServiceException("Please select at least one target audience.");
-        if (dto.Capacity < 1 || dto.Capacity > 10000) throw new ServiceException("Capacity must be between 1 and 10,000.");
-        if (dto.EndTime <= dto.StartTime) throw new ServiceException("End time must be after the start time.");
-        if (dto.StartTime < DateTime.Now) throw new ServiceException("The event must start in the future.");
+        if (dto.Capacity < 1 || dto.Capacity > 10000)
+            throw new ServiceException("Number of attendees must be between 1 and 10,000.");
+        ValidateTimes(dto.StartTime, dto.EndTime, who.IsGuest);
         if (dto.Departments.Count == 0)
             throw new ServiceException("Please tick at least one department you need.");
         if (dto.Departments.Select(d => d.Department).Distinct().Count() != dto.Departments.Count)
@@ -68,25 +72,40 @@ public class EventService : IEventService
 
         // Validate everything BEFORE saving any file
         var requests = new List<(DepartmentRequestInputDto Input, DepartmentRequest Entity)>();
-        var allFacilityIds = new List<int>();
+        var bookable = new List<int>();          // real facilities (not "Others") that can clash with other events
+        var shownNames = new List<string>();
 
         foreach (var input in dto.Departments)
         {
             if (!Enum.IsDefined(input.Department)) throw new ServiceException("Invalid department.");
             var office = FacilityMapper.OfficeName(input.Department);
+            var otherName = input.OtherFacilityName?.Trim();
 
-            var facilityIds = input.FacilityIds.Distinct().ToList();
-            foreach (var fid in facilityIds)
+            var dr = new DepartmentRequest { Department = input.Department };
+            foreach (var fid in input.FacilityIds.Distinct())
             {
                 if (!allFacilities.TryGetValue(fid, out var f))
                     throw new ServiceException("Selected facility does not exist.");
                 if (f.Department != input.Department)
                     throw new ServiceException($"{f.Name} does not belong to {office}.");
-            }
 
-            var dr = new DepartmentRequest { Department = input.Department };
-            foreach (var fid in facilityIds)
-                dr.Facilities.Add(new EventFacility { FacilityId = fid });
+                if (f.IsOther)
+                {
+                    if (string.IsNullOrWhiteSpace(otherName))
+                        throw new ServiceException($"Please type the facility name for 'Others' under {office}.");
+                    dr.Facilities.Add(new EventFacility { FacilityId = f.Id, OtherName = otherName });
+                    shownNames.Add($"Others: {otherName}");
+                    continue;
+                }
+
+                // Small rooms are not allowed for big events
+                if (f.Capacity.HasValue && f.Capacity.Value < dto.Capacity)
+                    throw new ServiceException($"{f.Name} only fits {f.Capacity} people, but you expect {dto.Capacity}. Choose a bigger facility.");
+
+                dr.Facilities.Add(new EventFacility { FacilityId = f.Id });
+                bookable.Add(f.Id);
+                shownNames.Add(f.Name);
+            }
 
             foreach (var req in input.Equipment)
             {
@@ -118,15 +137,11 @@ public class EventService : IEventService
                 throw new ServiceException($"An endorsement letter (image, PDF or DOCX) is required for {office}.");
             if (hasFile) ValidateFile(input.Endorsement!, office);
 
-            allFacilityIds.AddRange(facilityIds);
             requests.Add((input, dr));
         }
 
-        // Double-booking guard (pending OR approved holds the slot)
-        var taken = await _events.GetConflictingFacilitiesAsync(allFacilityIds, dto.StartTime, dto.EndTime, approvedOnly: false);
-        if (taken.Count > 0)
-            throw new ServiceException(
-                $"Already booked or pending for this time: {string.Join(", ", taken)}.", 409);
+        // Double-booking guard. School events may replace PENDING guest requests, nothing else.
+        await ResolveConflictsAsync(bookable, dto.StartTime, dto.EndTime, who.IsGuest, null);
 
         // Save the letters, then the event
         foreach (var (input, dr) in requests)
@@ -135,34 +150,93 @@ public class EventService : IEventService
                 (dr.EndorsementStoredName, dr.EndorsementOriginalName) = await SaveFileAsync(input.Endorsement);
         }
 
+        var institutional = who.Role == RequesterRole.Administrator;
         var ev = new CampusEvent
         {
             Title = dto.Title.Trim(),
             RequesterName = dto.RequesterName.Trim(),
-            RequesterEmail = requesterEmail,
+            RequesterEmail = who.Email.Trim().ToLowerInvariant(),
+            RequesterPhone = who.Phone,
             Organization = dto.Organization.Trim(),
-            Role = dto.Role,
+            Role = who.Role,
             TargetAudience = dto.TargetAudience,
             Purpose = dto.Purpose.Trim(),
             Capacity = dto.Capacity,
             StartTime = dto.StartTime,
             EndTime = dto.EndTime,
+            IsGuest = who.IsGuest,
+            IsInstitutional = institutional,
+            RequiresRegistration = !institutional,
+            ManageCode = NewManageCode(),
             Status = EventStatus.Pending,
             DepartmentRequests = requests.Select(r => r.Entity).ToList()
         };
         await _events.AddAsync(ev);
 
-        var names = allFacilityIds.Distinct().ToList();
-        return new EventSummaryDto(
-            ev.Id, ev.Title, ev.Organization, ev.Purpose,
-            names, names.Select(id => allFacilities[id].Name).ToList(),
-            ev.StartTime, ev.EndTime, ev.TargetAudience, ev.Capacity, 0, ev.Status);
+        return new EventCreatedDto(Summary(ev, bookable, shownNames), ev.ManageCode);
+    }
+
+    // Super admin posts a school-wide event: approved right away, nobody needs to register
+    public async Task<EventCreatedDto> CreateInstitutionalAsync(InstitutionalEventDto dto, string adminEmail, string adminName)
+    {
+        if (dto.TargetAudience == YearLevel.None || ((int)dto.TargetAudience & ~(int)YearLevel.All) != 0)
+            throw new ServiceException("Please select at least one target audience.");
+        ValidateTimes(dto.StartTime, dto.EndTime, isGuest: false);
+
+        var allFacilities = (await _facilities.GetAllAsync()).ToDictionary(f => f.Id);
+        var ids = dto.FacilityIds.Distinct().ToList();
+        if (ids.Count == 0) throw new ServiceException("Pick at least one facility.");
+
+        var byDept = new Dictionary<DepartmentType, DepartmentRequest>();
+        var names = new List<string>();
+        foreach (var id in ids)
+        {
+            if (!allFacilities.TryGetValue(id, out var f)) throw new ServiceException("Selected facility does not exist.");
+            if (f.IsOther) throw new ServiceException("Pick a listed facility (not 'Others') for institutional events.");
+
+            if (!byDept.TryGetValue(f.Department, out var dr))
+            {
+                dr = new DepartmentRequest
+                {
+                    Department = f.Department,
+                    Status = EventStatus.Approved,
+                    ReviewedBy = adminEmail,
+                    ReviewedAt = DateTime.Now
+                };
+                byDept[f.Department] = dr;
+            }
+            dr.Facilities.Add(new EventFacility { FacilityId = f.Id });
+            names.Add(f.Name);
+        }
+
+        await ResolveConflictsAsync(ids, dto.StartTime, dto.EndTime, false, null);
+
+        var ev = new CampusEvent
+        {
+            Title = dto.Title.Trim(),
+            RequesterName = adminName,
+            RequesterEmail = adminEmail,
+            Organization = dto.Organization.Trim(),
+            Role = RequesterRole.Administrator,
+            TargetAudience = dto.TargetAudience,
+            Purpose = dto.Purpose.Trim(),
+            Capacity = 0,
+            StartTime = dto.StartTime,
+            EndTime = dto.EndTime,
+            IsInstitutional = true,
+            RequiresRegistration = false,
+            ManageCode = NewManageCode(),
+            Status = EventStatus.Approved,
+            DepartmentRequests = byDept.Values.ToList()
+        };
+        await _events.AddAsync(ev);
+        return new EventCreatedDto(Summary(ev, ids, names), ev.ManageCode);
     }
 
     // ------------------------------------------------------- requester side
 
     public async Task<List<EventDetailDto>> GetMineAsync(string email) =>
-        (await _events.GetMineAsync(email)).Select(e => e.ToDetail()).ToList();
+        (await _events.GetMineAsync(email.ToLowerInvariant())).Select(e => e.ToDetail()).ToList();
 
     public async Task<EventDetailDto> GetDetailAsync(int id) =>
         (await _events.GetDetailAsync(id) ?? throw new ServiceException("Event not found.", 404)).ToDetail();
@@ -171,7 +245,19 @@ public class EventService : IEventService
     {
         var ev = await LoadOwnedAsync(id, email);
         if (ev.Status != EventStatus.Pending)
-            throw new ServiceException("Only pending requests can be edited.");
+            throw new ServiceException("Only pending requests can be edited. You can still move or cancel the event.");
+
+        var full = await _events.GetDetailAsync(id) ?? throw new ServiceException("Event not found.", 404);
+        var registered = full.Registrations.Count(r => !r.Cancelled);
+        if (dto.Capacity < registered)
+            throw new ServiceException($"{registered} people already registered, so the number cannot go lower than that.");
+        foreach (var ef in full.DepartmentRequests.SelectMany(d => d.Facilities))
+        {
+            var f = ef.Facility!;
+            if (!f.IsOther && f.Capacity.HasValue && f.Capacity.Value < dto.Capacity)
+                throw new ServiceException($"{f.Name} only fits {f.Capacity} people.");
+        }
+
         ev.Title = dto.Title.Trim();
         ev.Purpose = dto.Purpose.Trim();
         ev.Capacity = dto.Capacity;
@@ -179,16 +265,33 @@ public class EventService : IEventService
         return await GetDetailAsync(id);
     }
 
-    // Soft delete: the event stays in the database with status Cancelled
-    public async Task CancelAsync(int id, string email)
+    public async Task<EventDetailDto> RescheduleAsync(int id, RescheduleDto dto, string email)
     {
         var ev = await LoadOwnedAsync(id, email);
-        if (ev.Status is EventStatus.Cancelled or EventStatus.Rejected)
-            throw new ServiceException("This event is already closed.");
-        if (ev.StartTime < DateTime.Now) throw new ServiceException("The event already started.");
-        ev.Status = EventStatus.Cancelled;
-        await _events.SaveAsync();
+        await RescheduleCoreAsync(ev, dto);
+        return await GetDetailAsync(id);
     }
+
+    // Soft delete: the event stays in the database with status Cancelled
+    public async Task CancelAsync(int id, string email) =>
+        await CancelCoreAsync(await LoadOwnedAsync(id, email));
+
+    // ---------------------------------------------------------------- guests
+
+    public async Task<EventDetailDto> GetGuestEventAsync(int id, string email, string code)
+    {
+        await LoadGuestAsync(id, email, code);
+        return await GetDetailAsync(id);
+    }
+
+    public async Task<EventDetailDto> RescheduleGuestAsync(int id, RescheduleDto dto, string email, string code)
+    {
+        await RescheduleCoreAsync(await LoadGuestAsync(id, email, code), dto);
+        return await GetDetailAsync(id);
+    }
+
+    public async Task CancelGuestAsync(int id, string email, string code) =>
+        await CancelCoreAsync(await LoadGuestAsync(id, email, code));
 
     // ----------------------------------------------------------------- admin
 
@@ -207,18 +310,19 @@ public class EventService : IEventService
     public async Task<List<AdminRequestDto>> GetRequestsForAdminAsync(DepartmentType dept, EventStatus status) =>
         (await _deptRequests.GetByDepartmentAsync(dept, status)).Select(d => d.ToAdminDto()).ToList();
 
-    public async Task ApproveAsync(int id, DepartmentType dept, string adminEmail)
+    public async Task ApproveAsync(int id, DepartmentType? dept, string adminEmail)
     {
         var dr = await LoadForReviewAsync(id, dept);
 
-        var facilityIds = dr.Facilities.Select(f => f.FacilityId).ToList();
+        var facilityIds = dr.Facilities.Where(f => f.Facility is { IsOther: false }).Select(f => f.FacilityId).ToList();
         if (facilityIds.Count > 0)
         {
-            var taken = await _events.GetConflictingFacilitiesAsync(
+            var taken = await _events.GetConflictsAsync(
                 facilityIds, dr.CampusEvent!.StartTime, dr.CampusEvent.EndTime,
                 approvedOnly: true, excludeEventId: dr.CampusEventId);
             if (taken.Count > 0)
-                throw new ServiceException($"Another approved event already uses: {string.Join(", ", taken)}.", 409);
+                throw new ServiceException(
+                    $"Another approved event already uses: {string.Join(", ", taken.Select(t => t.FacilityName).Distinct())}.", 409);
         }
 
         dr.Status = EventStatus.Approved;
@@ -229,7 +333,7 @@ public class EventService : IEventService
         await _deptRequests.SaveAsync();
     }
 
-    public async Task RejectAsync(int id, DepartmentType dept, string adminEmail, string reason)
+    public async Task RejectAsync(int id, DepartmentType? dept, string adminEmail, string reason)
     {
         var dr = await LoadForReviewAsync(id, dept);
         dr.Status = EventStatus.Rejected;
@@ -243,16 +347,27 @@ public class EventService : IEventService
             other.Status = EventStatus.Rejected;
             other.ReviewedBy = adminEmail;
             other.ReviewedAt = DateTime.Now;
-            other.RejectionReason = $"Closed because {FacilityMapper.OfficeName(dept)} rejected the event.";
+            other.RejectionReason = $"Closed because {FacilityMapper.OfficeName(dr.Department)} rejected the event.";
         }
         RecomputeStatus(dr.CampusEvent);
         await _deptRequests.SaveAsync();
     }
 
-    public async Task<(string PhysicalPath, string ContentType, string DownloadName)> GetEndorsementAsync(int id, DepartmentType dept)
+    // Admins can cancel (soft delete) an event. An office admin only for events that involve their office.
+    public async Task AdminCancelEventAsync(int eventId, DepartmentType? dept)
+    {
+        var ev = await _events.GetByIdAsync(eventId) ?? throw new ServiceException("Event not found.", 404);
+        if (dept.HasValue && !ev.DepartmentRequests.Any(d => d.Department == dept.Value))
+            throw new ServiceException("This event does not involve your office.", 403);
+        if (ev.Status == EventStatus.Cancelled) throw new ServiceException("This event is already cancelled.");
+        ev.Status = EventStatus.Cancelled;
+        await _events.SaveAsync();
+    }
+
+    public async Task<(string PhysicalPath, string ContentType, string DownloadName)> GetEndorsementAsync(int id, DepartmentType? dept)
     {
         var dr = await _deptRequests.GetByIdAsync(id) ?? throw new ServiceException("Request not found.", 404);
-        if (dr.Department != dept) throw new ServiceException("Not allowed.", 403);
+        if (dept.HasValue && dr.Department != dept) throw new ServiceException("Not allowed.", 403);
         if (dr.EndorsementStoredName == null) throw new ServiceException("No endorsement letter was uploaded.", 404);
 
         var path = Path.Combine(UploadDir, dr.EndorsementStoredName);
@@ -264,6 +379,101 @@ public class EventService : IEventService
     }
 
     // --------------------------------------------------------------- helpers
+
+    private static string NewManageCode() => Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+
+    private static EventSummaryDto Summary(CampusEvent ev, List<int> facilityIds, List<string> names) => new(
+        ev.Id, ev.Title, ev.Organization, ev.Purpose,
+        facilityIds.Distinct().ToList(), names.Distinct().ToList(),
+        ev.StartTime, ev.EndTime, ev.TargetAudience, ev.Capacity, 0,
+        ev.IsInstitutional, ev.RequiresRegistration, ev.Status);
+
+    // Outsiders must use the guest form; school emails have to sign in
+    private void RejectSchoolEmail(string email)
+    {
+        var domain = _config["Auth:AllowedEmailDomain"];
+        if (!string.IsNullOrWhiteSpace(domain) &&
+            email.Trim().EndsWith("@" + domain.Trim(), StringComparison.OrdinalIgnoreCase))
+            throw new ServiceException("School accounts must sign in. The guest form is for outsiders only.");
+    }
+
+    private static bool IsWeekendRange(DateTime start, DateTime end)
+    {
+        for (var day = start.Date; day <= end.Date; day = day.AddDays(1))
+            if (day.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday)) return false;
+        return true;
+    }
+
+    private static void ValidateTimes(DateTime start, DateTime end, bool isGuest)
+    {
+        if (end <= start) throw new ServiceException("End time must be after the start time.");
+        if (start < DateTime.Now) throw new ServiceException("The event must start in the future.");
+        if (isGuest && !IsWeekendRange(start, end))
+            throw new ServiceException("Outsiders can only book on weekends (Saturday and Sunday).");
+    }
+
+    // Same facility + overlapping time against pending OR approved events = conflict (409).
+    // Exception: a school event may take the place of a PENDING guest request (school has priority).
+    private async Task ResolveConflictsAsync(List<int> facilityIds, DateTime start, DateTime end, bool requesterIsGuest, int? excludeEventId)
+    {
+        var conflicts = await _events.GetConflictsAsync(facilityIds, start, end, approvedOnly: false, excludeEventId);
+        if (conflicts.Count == 0) return;
+
+        if (requesterIsGuest || conflicts.Any(c => !c.PendingGuest))
+            throw new ServiceException(
+                $"Already booked or pending for this time: {string.Join(", ", conflicts.Select(c => c.FacilityName).Distinct())}.", 409);
+
+        foreach (var eventId in conflicts.Select(c => c.EventId).Distinct())
+        {
+            var guestEvent = await _events.GetByIdAsync(eventId);
+            if (guestEvent == null) continue;
+            foreach (var dr in guestEvent.DepartmentRequests.Where(d => d.Status == EventStatus.Pending))
+            {
+                dr.Status = EventStatus.Rejected;
+                dr.ReviewedBy = "system";
+                dr.ReviewedAt = DateTime.Now;
+                dr.RejectionReason = "A school event needs this facility at the same time (school events have priority).";
+            }
+            guestEvent.Status = EventStatus.Rejected;
+        }
+        await _events.SaveAsync();
+    }
+
+    private async Task RescheduleCoreAsync(CampusEvent ev, RescheduleDto dto)
+    {
+        if (ev.Status is not (EventStatus.Pending or EventStatus.Approved))
+            throw new ServiceException("Only pending or approved events can be moved.");
+        ValidateTimes(dto.StartTime, dto.EndTime, ev.IsGuest);
+
+        var facilityIds = ev.DepartmentRequests.SelectMany(d => d.Facilities)
+            .Where(f => f.Facility is { IsOther: false }).Select(f => f.FacilityId).Distinct().ToList();
+        await ResolveConflictsAsync(facilityIds, dto.StartTime, dto.EndTime, ev.IsGuest, ev.Id);
+
+        ev.StartTime = dto.StartTime;
+        ev.EndTime = dto.EndTime;
+
+        // A new date has to be approved again by every office (institutional events stay approved)
+        if (!ev.IsInstitutional)
+        {
+            foreach (var dr in ev.DepartmentRequests.Where(d => d.Status == EventStatus.Approved))
+            {
+                dr.Status = EventStatus.Pending;
+                dr.ReviewedBy = null;
+                dr.ReviewedAt = null;
+            }
+            RecomputeStatus(ev);
+        }
+        await _events.SaveAsync();
+    }
+
+    private async Task CancelCoreAsync(CampusEvent ev)
+    {
+        if (ev.Status is EventStatus.Cancelled or EventStatus.Rejected)
+            throw new ServiceException("This event is already closed.");
+        if (ev.StartTime < DateTime.Now) throw new ServiceException("The event already started.");
+        ev.Status = EventStatus.Cancelled;
+        await _events.SaveAsync();
+    }
 
     // Any Rejected -> Rejected; all Approved -> Approved; otherwise Pending
     private static void RecomputeStatus(CampusEvent ev)
@@ -282,11 +492,21 @@ public class EventService : IEventService
         return ev;
     }
 
-    private async Task<DepartmentRequest> LoadForReviewAsync(int id, DepartmentType dept)
+    private async Task<CampusEvent> LoadGuestAsync(int id, string email, string code)
+    {
+        var ev = await _events.GetByIdAsync(id) ?? throw new ServiceException("Event not found.", 404);
+        if (!ev.IsGuest
+            || !string.Equals(ev.RequesterEmail, email.Trim(), StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(ev.ManageCode, code.Trim(), StringComparison.OrdinalIgnoreCase))
+            throw new ServiceException("The email or manage code is wrong.", 403);
+        return ev;
+    }
+
+    private async Task<DepartmentRequest> LoadForReviewAsync(int id, DepartmentType? dept)
     {
         var dr = await _deptRequests.GetByIdAsync(id) ?? throw new ServiceException("Request not found.", 404);
-        if (dr.Department != dept) throw new ServiceException("This request belongs to another office.", 403);
-        if (dr.CampusEvent!.Status == EventStatus.Cancelled) throw new ServiceException("The requester cancelled this event.");
+        if (dept.HasValue && dr.Department != dept) throw new ServiceException("This request belongs to another office.", 403);
+        if (dr.CampusEvent!.Status == EventStatus.Cancelled) throw new ServiceException("This event was cancelled.");
         if (dr.Status != EventStatus.Pending) throw new ServiceException("This request was already reviewed.");
         return dr;
     }

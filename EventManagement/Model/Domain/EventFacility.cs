@@ -9,4 +9,6 @@ public class EventFacility
 
     public int FacilityId { get; set; }
     public Facility? Facility { get; set; }
+
+    public string? OtherName { get; set; }    // only when the facility is "Others"
 }

@@ -1,4 +1,4 @@
-﻿using EventManagement.Model.Domain;
+using EventManagement.Model.Domain;
 
 namespace EventManagement.Model.DTO;
 
@@ -7,4 +7,7 @@ public record AuthResponseDto(
     string Email,
     string FullName,
     bool IsAdmin,
-    DepartmentType? Department);
+    bool IsSuperAdmin,
+    DepartmentType? Department,
+    RequesterRole Position,
+    YearLevel Level);

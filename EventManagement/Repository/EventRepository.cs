@@ -39,12 +39,16 @@ public class EventRepository : IEventRepository
         Full().FirstOrDefaultAsync(e => e.Id == id);
 
     public Task<CampusEvent?> GetByIdAsync(int id) =>
-        _db.Events.Include(e => e.DepartmentRequests).FirstOrDefaultAsync(e => e.Id == id);
+        _db.Events
+            .Include(e => e.DepartmentRequests).ThenInclude(d => d.Facilities).ThenInclude(f => f.Facility)
+            .FirstOrDefaultAsync(e => e.Id == id);
 
-    public Task<List<string>> GetConflictingFacilitiesAsync(
+    public async Task<List<FacilityConflict>> GetConflictsAsync(
         IEnumerable<int> facilityIds, DateTime start, DateTime end, bool approvedOnly, int? excludeEventId = null)
     {
         var ids = facilityIds.ToList();
+        if (ids.Count == 0) return new List<FacilityConflict>();
+
         var q = _db.EventFacilities.Where(ef =>
             ids.Contains(ef.FacilityId)
             && ef.DepartmentRequest!.CampusEvent!.StartTime < end
@@ -56,7 +60,15 @@ public class EventRepository : IEventRepository
         if (approvedOnly) q = q.Where(ef => ef.DepartmentRequest!.Status == EventStatus.Approved);
         if (excludeEventId.HasValue) q = q.Where(ef => ef.DepartmentRequest!.CampusEventId != excludeEventId.Value);
 
-        return q.Select(ef => ef.Facility!.Name).Distinct().ToListAsync();
+        var rows = await q.Select(ef => new
+        {
+            Name = ef.Facility!.Name,
+            EventId = ef.DepartmentRequest!.CampusEventId,
+            PendingGuest = ef.DepartmentRequest.CampusEvent!.IsGuest
+                           && ef.DepartmentRequest.CampusEvent.Status == EventStatus.Pending
+        }).ToListAsync();
+
+        return rows.Select(r => new FacilityConflict(r.Name, r.EventId, r.PendingGuest)).ToList();
     }
 
     public async Task AddAsync(CampusEvent ev)

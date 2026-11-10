@@ -9,9 +9,9 @@ public interface IEventRepository
     Task<List<CampusEvent>> GetMineAsync(string requesterEmail);
     Task<List<CampusEvent>> GetForDepartmentAsync(DepartmentType dept);
     Task<CampusEvent?> GetDetailAsync(int id);            // read-only, everything loaded
-    Task<CampusEvent?> GetByIdAsync(int id);              // tracked, with DepartmentRequests
-    // Names of facilities already taken in the given window (pending or approved)
-    Task<List<string>> GetConflictingFacilitiesAsync(IEnumerable<int> facilityIds, DateTime start, DateTime end, bool approvedOnly, int? excludeEventId = null);
+    Task<CampusEvent?> GetByIdAsync(int id);              // tracked, with DepartmentRequests + Facilities
+    // Which facilities are already taken in the given window, and by which event
+    Task<List<FacilityConflict>> GetConflictsAsync(IEnumerable<int> facilityIds, DateTime start, DateTime end, bool approvedOnly, int? excludeEventId = null);
     Task AddAsync(CampusEvent ev);
     Task SaveAsync();
 }

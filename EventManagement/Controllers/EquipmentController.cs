@@ -6,7 +6,7 @@ namespace EventManagement.Controllers;
 
 [ApiController]
 [Route("api/equipment")]
-[Authorize]
+[AllowAnonymous]
 public class EquipmentController : ControllerBase
 {
     private readonly IEquipmentService _equipment;

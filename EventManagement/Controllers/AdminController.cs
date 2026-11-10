@@ -6,46 +6,60 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EventManagement.Controllers;
 
+// Office admins act on their own office. The super admin can act on any office (pass ?dept=).
 [ApiController]
 [Route("api/admin")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,SuperAdmin")]
 public class AdminController : ControllerBase
 {
     private readonly IEventService _events;
     public AdminController(IEventService events) => _events = events;
 
-    private DepartmentType Dept =>
-        Enum.TryParse<DepartmentType>(User.FindFirst("dept")?.Value, out var d)
-            ? d : throw new ServiceException("Your admin account has no office assigned.", 403);
+    // null = super admin (no office restriction)
+    private DepartmentType? Scope => User.IsInRole("SuperAdmin") ? null : User.Dept()
+        ?? throw new ServiceException("Your admin account has no office assigned.", 403);
 
-    private string Email => User.FindFirst("email")!.Value;
+    // For lists: which office's requests to show
+    private DepartmentType Office(DepartmentType? dept) =>
+        Scope ?? dept ?? throw new ServiceException("Choose an office.");
+
+    private string Email => User.Email();
 
     [HttpGet("requests")]
-    public async Task<IActionResult> Requests([FromQuery] EventStatus status = EventStatus.Pending)
-        => Ok(await _events.GetRequestsForAdminAsync(Dept, status));
+    public async Task<IActionResult> Requests([FromQuery] EventStatus status = EventStatus.Pending, [FromQuery] DepartmentType? dept = null)
+        => Ok(await _events.GetRequestsForAdminAsync(Office(dept), status));
 
     [HttpGet("reports/events")]
-    public async Task<IActionResult> Report() => Ok(await _events.GetReportAsync(Dept));
+    public async Task<IActionResult> Report([FromQuery] DepartmentType? dept = null)
+        => Ok(await _events.GetReportAsync(Office(dept)));
 
     [HttpPost("requests/{id:int}/approve")]
     public async Task<IActionResult> Approve(int id)
     {
-        await _events.ApproveAsync(id, Dept, Email);
+        await _events.ApproveAsync(id, Scope, Email);
         return Ok(new { message = "Request approved." });
     }
 
     [HttpPost("requests/{id:int}/reject")]
     public async Task<IActionResult> Reject(int id, RejectDto dto)
     {
-        await _events.RejectAsync(id, Dept, Email, dto.Reason);
+        await _events.RejectAsync(id, Scope, Email, dto.Reason);
         return Ok(new { message = "Request rejected." });
     }
 
     [HttpGet("requests/{id:int}/endorsement")]
     public async Task<IActionResult> Endorsement(int id)
     {
-        var (path, contentType, name) = await _events.GetEndorsementAsync(id, Dept);
+        var (path, contentType, name) = await _events.GetEndorsementAsync(id, Scope);
         Response.Headers["X-Download-Name"] = Uri.EscapeDataString(name);
         return PhysicalFile(path, contentType);
+    }
+
+    // Admins can cancel (soft delete) an event
+    [HttpDelete("events/{id:int}")]
+    public async Task<IActionResult> CancelEvent(int id)
+    {
+        await _events.AdminCancelEventAsync(id, Scope);
+        return NoContent();
     }
 }

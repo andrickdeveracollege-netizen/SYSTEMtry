@@ -12,7 +12,7 @@ public static class DepartmentRequestMapper
         return new(
             d.Id, e.Id, e.Title, e.RequesterName, e.RequesterEmail, e.Organization,
             e.Role, e.TargetAudience, e.Purpose, e.StartTime, e.EndTime,
-            d.Facilities.Select(f => f.Facility!.Name).ToList(),
+            d.Facilities.Select(f => f.DisplayName()).ToList(),
             d.EquipmentItems.Select(i => new AdminEquipmentLineDto(i.Equipment!.Name, i.Quantity, i.Notes)).ToList(),
             d.Status,
             d.EndorsementStoredName != null,

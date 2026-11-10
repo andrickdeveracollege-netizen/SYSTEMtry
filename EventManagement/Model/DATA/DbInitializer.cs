@@ -8,12 +8,32 @@ public static class DbInitializer
 {
     public static async Task SeedAsync(AppDBContext db, IConfiguration config)
     {
-        await SeedAdminsAsync(db, config);
-        await SeedTestUserAsync(db, config);
+        await SeedSuperAdminAsync(db, config);
+        await SeedOfficeAdminsAsync(db, config);
+        await SeedTestUsersAsync(db, config);
         await SeedSampleEventAsync(db);
     }
 
-    private static async Task SeedAdminsAsync(AppDBContext db, IConfiguration config)
+    // admin@ustangelicum.edu.ph: resets passwords, posts institutional events, approves any office
+    private static async Task SeedSuperAdminAsync(AppDBContext db, IConfiguration config)
+    {
+        var email = config["Seed:SuperAdmin:Email"]?.Trim().ToLowerInvariant();
+        var password = config["Seed:AdminPassword"];
+        if (string.IsNullOrEmpty(email) || string.IsNullOrWhiteSpace(password)) return;
+        if (await db.Users.AnyAsync(u => u.Email == email)) return;
+
+        db.Users.Add(new User
+        {
+            Email = email,
+            FullName = config["Seed:SuperAdmin:FullName"] ?? "Super Admin",
+            PasswordHash = PasswordHasher.Hash(password),
+            Role = UserRole.SuperAdmin,
+            Position = RequesterRole.Administrator
+        });
+        await db.SaveChangesAsync();
+    }
+
+    private static async Task SeedOfficeAdminsAsync(AppDBContext db, IConfiguration config)
     {
         var password = config["Seed:AdminPassword"];
         if (string.IsNullOrWhiteSpace(password)) return;
@@ -31,27 +51,36 @@ public static class DbInitializer
                 FullName = section["FullName"] ?? email,
                 PasswordHash = PasswordHasher.Hash(password),
                 Role = UserRole.Admin,
-                AdminDepartment = dept
+                AdminDepartment = dept,
+                Position = RequesterRole.Administrator
             });
         }
         await db.SaveChangesAsync();
     }
 
-    // A regular (attendee / organizer) account so every role can be tried right away
-    private static async Task SeedTestUserAsync(AppDBContext db, IConfiguration config)
+    // One account per kind of school user. Role and level come from the email format.
+    private static async Task SeedTestUsersAsync(AppDBContext db, IConfiguration config)
     {
-        var email = config["Seed:TestUser:Email"]?.Trim().ToLowerInvariant();
-        var password = config["Seed:TestUser:Password"];
-        if (string.IsNullOrEmpty(email) || string.IsNullOrWhiteSpace(password)) return;
-        if (await db.Users.AnyAsync(u => u.Email == email)) return;
-
-        db.Users.Add(new User
+        foreach (var section in config.GetSection("Seed:Users").GetChildren())
         {
-            Email = email,
-            FullName = config["Seed:TestUser:FullName"] ?? "Test User",
-            PasswordHash = PasswordHasher.Hash(password),
-            Role = UserRole.User
-        });
+            var email = section["Email"]?.Trim().ToLowerInvariant();
+            var password = section["Password"];
+            if (string.IsNullOrEmpty(email) || string.IsNullOrWhiteSpace(password)) continue;
+            if (await db.Users.AnyAsync(u => u.Email == email)) continue;
+
+            var (position, level) = EmailRoleParser.Parse(email);
+            if (Enum.TryParse<RequesterRole>(section["Position"], out var forced)) position = forced;
+
+            db.Users.Add(new User
+            {
+                Email = email,
+                FullName = section["FullName"] ?? email,
+                PasswordHash = PasswordHasher.Hash(password),
+                Role = UserRole.User,
+                Position = position,
+                Level = level
+            });
+        }
         await db.SaveChangesAsync();
     }
 
@@ -67,14 +96,15 @@ public static class DbInitializer
         {
             Title = "Intramurals Opening Ceremony",
             RequesterName = "Sample Organizer",
-            RequesterEmail = "student@ustangelicum.edu.ph",
+            RequesterEmail = "juan.delacruz.college@ustangelicum.edu.ph",
             Organization = "Student Council",
             Role = RequesterRole.Student,
             TargetAudience = YearLevel.All,
             Purpose = "Kick-off program for the school intramurals.",
-            Capacity = 200,
+            Capacity = 150,
             StartTime = start,
             EndTime = start.AddHours(3),
+            ManageCode = "SEED0001",
             Status = EventStatus.Approved,
             DepartmentRequests =
             {

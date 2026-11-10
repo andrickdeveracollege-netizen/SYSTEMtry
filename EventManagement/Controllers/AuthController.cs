@@ -1,5 +1,6 @@
-﻿using EventManagement.Model.DTO;
+using EventManagement.Model.DTO;
 using EventManagement.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EventManagement.Controllers;
@@ -16,4 +17,12 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponseDto>> Login(LoginDto dto) => Ok(await _auth.LoginAsync(dto));
+
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(ChangePasswordDto dto)
+    {
+        await _auth.ChangePasswordAsync(User.Email(), dto);
+        return Ok(new { message = "Password changed." });
+    }
 }

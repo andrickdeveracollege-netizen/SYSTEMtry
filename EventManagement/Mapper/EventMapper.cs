@@ -8,19 +8,15 @@ public static class EventMapper
     // Needs DepartmentRequests -> Facilities -> Facility and Registrations loaded
     public static EventSummaryDto ToSummary(this CampusEvent e)
     {
-        var facilities = e.DepartmentRequests
-            .SelectMany(d => d.Facilities)
-            .Where(f => f.Facility != null)
-            .Select(f => f.Facility!)
-            .DistinctBy(f => f.Id)
-            .ToList();
+        var rows = e.DepartmentRequests.SelectMany(d => d.Facilities).Where(f => f.Facility != null).ToList();
 
         return new(
             e.Id, e.Title, e.Organization, e.Purpose,
-            facilities.Select(f => f.Id).ToList(),
-            facilities.Select(f => f.Name).ToList(),
+            rows.Select(f => f.FacilityId).Distinct().ToList(),
+            rows.Select(f => f.DisplayName()).Distinct().ToList(),
             e.StartTime, e.EndTime, e.TargetAudience,
-            e.Capacity, e.Registrations.Count(r => !r.Cancelled), e.Status);
+            e.Capacity, e.Registrations.Count(r => !r.Cancelled),
+            e.IsInstitutional, e.RequiresRegistration, e.Status);
     }
 
     public static EventDetailDto ToDetail(this CampusEvent e) => new(

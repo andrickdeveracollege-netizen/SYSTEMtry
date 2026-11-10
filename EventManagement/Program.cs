@@ -25,6 +25,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<IRegistrationService, RegistrationService>();
 builder.Services.AddScoped<IEquipmentService, EquipmentService>();
+builder.Services.AddScoped<IUserAdminService, UserAdminService>();
 
 var jwt = builder.Configuration.GetSection("Jwt");
 var jwtKey = jwt["Key"];

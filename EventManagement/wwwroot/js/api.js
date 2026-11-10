@@ -15,6 +15,7 @@ const Auth = {
 };
 
 // Single place that talks to the API: attaches the token, handles 401 / 403 and error bodies.
+// Public (guest) calls work without a token. A 401 only happens on protected endpoints.
 async function api(path, { method = 'GET', body, form } = {}) {
   const headers = {};
   if (Auth.token) headers['Authorization'] = 'Bearer ' + Auth.token;
@@ -75,7 +76,7 @@ function toast(text, ok = true) {
   el.className = 'toast' + (ok ? '' : ' err');
   el.textContent = text;
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 4000);
+  setTimeout(() => el.remove(), 4500);
 }
 
 // Disables a button while a request is running so a form cannot be submitted twice
@@ -87,11 +88,58 @@ async function withBusy(btn, work) {
   finally { btn.disabled = false; btn.textContent = label; }
 }
 
+function confirmLogout() {
+  return new Promise(resolve => {
+    const modal = document.createElement('div');
+    modal.className = 'logout-modal';
+    modal.innerHTML = `
+      <div class="logout-dialog" role="dialog" aria-modal="true" aria-labelledby="logoutTitle">
+        <div class="logout-icon">!</div>
+        <h2 id="logoutTitle">Sign out?</h2>
+        <p>Are you sure you want to sign out?</p>
+        <div class="logout-actions">
+          <button type="button" class="logout-cancel">Cancel</button>
+          <button type="button" class="logout-confirm">Sign out</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+
+    const close = result => { modal.remove(); resolve(result); };
+    modal.querySelector('.logout-cancel').onclick = () => close(false);
+    modal.querySelector('.logout-confirm').onclick = () => close(true);
+    modal.onclick = e => { if (e.target === modal) close(false); };
+  });
+}
+
 function renderNav(el) {
+  const brand = document.querySelector('header.top .brand');
+  if (brand && !brand.querySelector('.brand-logo')) {
+    brand.insertAdjacentHTML('afterbegin', '<img class="brand-logo" src="/images/angelicum-logo.png" alt="UST Angelicum College logo" />');
+  }
+
   const u = Auth.user;
-  if (!u) { el.innerHTML = '<a href="/index.html">Home</a>'; return; }
-  el.innerHTML = `<a href="/index.html">Bulletin</a><a href="/dashboard.html">Dashboard</a>` +
+  if (!u) {
+    el.innerHTML = '<a href="/index.html">Home</a><a href="/visitor.html">Visitors</a>';
+    markActive(el);
+    return;
+  }
+
+  // Admins only manage events, so they get no Register / Request links
+  const dashboard = u.isAdmin ? '' :
+    `<div class="nav-dropdown"><a class="nav-dropdown-toggle" href="/dashboard.html">Dashboard ▾</a><div class="nav-dropdown-menu"><a href="/register.html">Register for an Event</a><a href="/request.html">Request an Event</a></div></div>`;
+  el.innerHTML = `<a href="/index.html">Bulletin</a>` + dashboard +
     (u.isAdmin ? '<a href="/admin.html">Approvals</a>' : '') +
-    `<span>${esc(u.fullName)}</span><a href="#" id="logoutLink">Sign out</a>`;
-  document.getElementById('logoutLink').onclick = e => { e.preventDefault(); Auth.logout(); };
+    (u.isSuperAdmin ? '<a href="/superadmin.html">Super admin</a>' : '') +
+    `<a href="#" id="logoutLink">Sign out</a>`;
+  document.getElementById('logoutLink').onclick = async e => {
+    e.preventDefault();
+    if (await confirmLogout()) Auth.logout();
+  };
+  markActive(el);
+}
+
+function markActive(el) {
+  for (const a of el.querySelectorAll('a')) {
+    if (a.href && new URL(a.href).pathname === location.pathname) a.classList.add('active');
+  }
 }

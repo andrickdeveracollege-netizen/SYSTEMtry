@@ -4,12 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>UST Angelicum College – Events</title>
+    <link rel="icon" type="image/png" href="/images/angelicum-logo.png" />
     <link rel="stylesheet" href="/css/site.css" />
     <link rel="stylesheet" href="/css/board.css" />
 </head>
 <body>
     <header class="top">
-        <a class="brand" href="/index.html">UST Angelicum College · Event Management</a>
+        <a class="brand" href="/index.html"><img class="brand-logo" src="/images/angelicum-logo.png" alt="UST Angelicum College logo" />UST Angelicum College · Event Management System</a>
         <nav id="nav"></nav>
     </header>
 
@@ -57,9 +58,13 @@
                     <div id="nameRow" style="display:none"><label for="fullName">Full name</label><input type="text" id="fullName" /></div>
                     <label for="email">Angelicum email</label><input type="email" id="email" placeholder="name@ustangelicum.edu.ph" />
                     <label for="password">Password</label><input type="password" id="password" />
+                    <div class="hint" id="roleHint">Students: firstname.surname.college / .shs / .jhs / .elem<br>Faculty &amp; staff: firstname.surname</div>
                     <div class="msg" id="authMsg"></div>
                     <button class="btn" type="submit" id="authSubmit" style="width:100%;margin-top:12px">Sign in</button>
                 </form>
+                <hr style="border:0;border-top:1px solid var(--line);margin:16px 0" />
+                <div class="muted">Not from the school?</div>
+                <a class="btn gold" href="/visitor.html" style="display:block;text-align:center;margin-top:8px">Continue as visitor</a>
             </div>
 
             <div class="card" id="signedIn" style="display:none">
@@ -67,9 +72,10 @@
                 <p class="who muted" id="who"></p>
                 <div class="stack">
                     <a class="btn gold" href="/dashboard.html">Go to dashboard</a>
-                    <a class="btn" href="/request.html">Request an Event</a>
-                    <a class="btn ghost" href="/register.html">Register for an Event</a>
+                    <a class="btn" id="registerLink" href="/register.html">Register for an Event</a>
+                    <a class="btn" id="requestLink" href="/request.html">Request an Event</a>
                     <a class="btn ghost" id="adminLink" href="/admin.html" style="display:none">Approvals</a>
+                    <a class="btn ghost" id="superLink" href="/superadmin.html" style="display:none">Super admin</a>
                     <button class="btn bad" id="logoutBtn" type="button">Sign out</button>
                 </div>
             </div>

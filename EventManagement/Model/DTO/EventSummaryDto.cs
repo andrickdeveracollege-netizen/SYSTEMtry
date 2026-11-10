@@ -14,4 +14,6 @@ public record EventSummaryDto(
     YearLevel TargetAudience,
     int Capacity,
     int Registered,
+    bool IsInstitutional,
+    bool RequiresRegistration,
     EventStatus Status);

@@ -22,7 +22,13 @@ if (Auth.token && Auth.user) {
   document.getElementById('signedOut').style.display = 'none';
   document.getElementById('signedIn').style.display = 'block';
   document.getElementById('who').textContent = Auth.user.fullName + ' · ' + Auth.user.email;
-  if (Auth.user.isAdmin) document.getElementById('adminLink').style.display = 'block';
+  if (Auth.user.isAdmin) {
+    // admins only manage events: they do not register or request
+    document.getElementById('adminLink').style.display = 'block';
+    document.getElementById('registerLink').style.display = 'none';
+    document.getElementById('requestLink').style.display = 'none';
+  }
+  if (Auth.user.isSuperAdmin) document.getElementById('superLink').style.display = 'block';
   document.getElementById('logoutBtn').onclick = () => Auth.logout();
 }
 
@@ -41,6 +47,17 @@ function setMode(m) {
 }
 document.getElementById('tabIn').onclick = () => setMode('in');
 document.getElementById('tabUp').onclick = () => setMode('up');
+
+// Shows what the email means, so nobody has to pick a role
+const LEVELS = { college: 'College student', shs: 'Senior High student', jhs: 'Junior High student', elem: 'Elementary student' };
+emailInput.addEventListener('input', () => {
+  if (mode !== 'up') return;
+  const parts = emailInput.value.split('@')[0].split('.').filter(Boolean);
+  const hint = document.getElementById('roleHint');
+  if (parts.length >= 3 && LEVELS[parts[parts.length - 1].toLowerCase()]) hint.textContent = 'Detected: ' + LEVELS[parts[parts.length - 1].toLowerCase()];
+  else if (parts.length === 2) hint.textContent = 'Detected: Faculty / staff';
+  else hint.innerHTML = 'Students: firstname.surname.college / .shs / .jhs / .elem<br>Faculty &amp; staff: firstname.surname';
+});
 
 function validateAuth() {
   if (!emailInput.value.trim()) return 'Please enter your email.';
@@ -87,8 +104,10 @@ function noteHtml(e, i) {
       <h3>${esc(e.title)}</h3>
       <div class="org">${esc(e.organization)}</div>
       <div class="where">📍 ${esc(placesOf(e))}</div>
-      <div class="seats">${left > 0 ? left + ' seats left' : 'Full'}</div>
-      <div class="go"><a class="btn" href="/register.html?eventId=${e.id}">Register</a></div>
+      <div class="seats">${!e.requiresRegistration ? 'Open to all' : left > 0 ? left + ' seats left' : 'Full'}</div>
+      <div class="go">${e.requiresRegistration
+        ? `<a class="btn" href="/register.html?eventId=${e.id}">Register</a>`
+        : '<span class="seats">School event · no registration</span>'}</div>
     </article>`;
 }
 

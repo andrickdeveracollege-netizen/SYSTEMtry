@@ -28,7 +28,7 @@ public class AppDBContext : DbContext
         b.Entity<Facility>(e =>
         {
             e.Property(x => x.Name).HasMaxLength(100).IsRequired();
-            e.HasIndex(x => x.Name).IsUnique();
+            e.HasIndex(x => new { x.Department, x.Name }).IsUnique();
         });
 
         b.Entity<CampusEvent>(e =>
@@ -38,6 +38,8 @@ public class AppDBContext : DbContext
             e.Property(x => x.RequesterEmail).HasMaxLength(200).IsRequired();
             e.Property(x => x.Organization).HasMaxLength(150).IsRequired();
             e.Property(x => x.Purpose).HasMaxLength(2000).IsRequired();
+            e.Property(x => x.RequesterPhone).HasMaxLength(30);
+            e.Property(x => x.ManageCode).HasMaxLength(12).IsRequired();
             e.HasIndex(x => new { x.StartTime, x.EndTime });
         });
 
@@ -53,6 +55,7 @@ public class AppDBContext : DbContext
 
         b.Entity<EventFacility>(e =>
         {
+            e.Property(x => x.OtherName).HasMaxLength(100);
             e.HasOne(x => x.DepartmentRequest).WithMany(d => d.Facilities)
              .HasForeignKey(x => x.DepartmentRequestId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Facility).WithMany(f => f.EventFacilities)
@@ -87,23 +90,51 @@ public class AppDBContext : DbContext
         b.Entity<Equipment>().HasData(SeedEquipment());
     }
 
+    // Capacities are placeholders: change the numbers to the real room sizes.
+    // Keep the order, because the Ids come from it.
     private static List<Facility> SeedFacilities()
     {
         var list = new List<Facility>();
         int id = 1;
-        void Add(DepartmentType d, params string[] names)
-        {
-            foreach (var n in names) list.Add(new Facility { Id = id++, Name = n, Department = d });
-        }
+        void Add(DepartmentType d, string name, int? capacity, bool other = false) =>
+            list.Add(new Facility { Id = id++, Name = name, Department = d, Capacity = capacity, IsOther = other });
 
-        Add(DepartmentType.Auxiliary, "Field", "Gym", "Dance Room", "Blessed Diana Hall", "Auditorium", "Elem Grounds");
-        Add(DepartmentType.ITMC, "Comlab 1", "Comlab 2", "Comlab 3", "Comlab 4", "Comlab 5");
-        Add(DepartmentType.College, "AULA MAYOR", "Deans Conference", "UNO", "DOS", "TRES", "QUATRO",
-            "CINCO", "SEIS", "CARITAS", "FORTITUDO", "JUSTITIA");
-        Add(DepartmentType.TVET, "Single Room", "Double Room", "Classrooms", "FBS Lab", "BBP Lab",
-            "Cookery Lab", "Ange Cafe");
-        // Appended last so the existing facility Ids stay the same..
-        Add(DepartmentType.Library, "MAIN LIB", "LOWER LIB", "IMC");
+        // Auxiliary (big events: Field, Gym)
+        Add(DepartmentType.Auxiliary, "Field", 2000);
+        Add(DepartmentType.Auxiliary, "Gym", 1000);
+        Add(DepartmentType.Auxiliary, "Dance Room", 40);
+        Add(DepartmentType.Auxiliary, "Blessed Diana Hall", 150);
+        Add(DepartmentType.Auxiliary, "Auditorium", 180);
+        Add(DepartmentType.Auxiliary, "Elem Grounds", 800);
+        Add(DepartmentType.Auxiliary, "Others", null, other: true);
+
+        // ITMC
+        foreach (var n in new[] { "Comlab 1", "Comlab 2", "Comlab 3", "Comlab 4", "Comlab 5" })
+            Add(DepartmentType.ITMC, n, 40);
+        Add(DepartmentType.ITMC, "Others", null, other: true);
+
+        // College (Ms. Judith)
+        Add(DepartmentType.College, "AULA MAYOR", 100);
+        Add(DepartmentType.College, "Deans Conference", 20);
+        foreach (var n in new[] { "UNO", "DOS", "TRES", "QUATRO", "CINCO", "SEIS", "CARITAS", "FORTITUDO", "JUSTITIA" })
+            Add(DepartmentType.College, n, 45);
+        Add(DepartmentType.College, "Others", null, other: true);
+
+        // TVET (Ms. Chavez)
+        Add(DepartmentType.TVET, "Single Room", 10);
+        Add(DepartmentType.TVET, "Double Room", 20);
+        Add(DepartmentType.TVET, "Classrooms", 45);
+        Add(DepartmentType.TVET, "FBS Lab", 30);
+        Add(DepartmentType.TVET, "BBP Lab", 30);
+        Add(DepartmentType.TVET, "Cookery Lab", 30);
+        Add(DepartmentType.TVET, "Ange Cafe", 50);
+        Add(DepartmentType.TVET, "Others", null, other: true);
+
+        // Library
+        Add(DepartmentType.Library, "MAIN LIB", 100);
+        Add(DepartmentType.Library, "LOWER LIB", 60);
+        Add(DepartmentType.Library, "IMC", 40);
+        Add(DepartmentType.Library, "Others", null, other: true);
         return list;
     }
 
