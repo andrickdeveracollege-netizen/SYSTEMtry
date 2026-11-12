@@ -37,7 +37,8 @@ function eventRow(d) {
   const e = d.event;
   const open = e.status === 'Pending' || e.status === 'Approved';
   const offices = d.departments.map(x =>
-    `<div class="muted">${esc(x.office)}: ${statusTag(x.status)}${x.rejectionReason ? ' — ' + esc(x.rejectionReason) : ''}</div>`).join('');
+    `<div class="muted">${esc(x.office)}: ${statusTag(x.status)}${x.rejectionReason ? ' — ' + esc(x.rejectionReason) : ''}</div>
+     ${x.note ? '<div class="hint-box" style="margin:4px 0"><b>Note from ' + esc(x.office) + ':</b> ' + esc(x.note) + '</div>' : ''}`).join('');
   const seats = e.requiresRegistration
     ? `<b>${e.registered}</b> of ${e.capacity} registered`
     : 'Institutional event · no registration';

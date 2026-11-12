@@ -24,7 +24,8 @@ function renderManage(d) {
   manageBox.innerHTML = `<div class="req">
     <strong>${esc(e.title)}</strong> ${statusTag(e.status)}<br>
     <span class="muted">${fmt(e.startTime)} – ${fmtTime(e.endTime)} · ${esc(placesOf(e))} · ${e.registered}/${e.capacity} registered</span>
-    ${d.departments.map(x => `<div class="muted">${esc(x.office)}: ${statusTag(x.status)}${x.rejectionReason ? ' — ' + esc(x.rejectionReason) : ''}</div>`).join('')}
+    ${d.departments.map(x => `<div class="muted">${esc(x.office)}: ${statusTag(x.status)}${x.rejectionReason ? ' — ' + esc(x.rejectionReason) : ''}</div>
+      ${x.note ? '<div class="hint-box" style="margin:4px 0"><b>Note from ' + esc(x.office) + ':</b> ' + esc(x.note) + '</div>' : ''}`).join('')}
     ${open ? `
     <hr style="border:0;border-top:1px solid var(--line);margin:12px 0" />
     <label for="gStart">Move to (weekend only)</label><input type="datetime-local" id="gStart" />

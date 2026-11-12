@@ -39,7 +39,9 @@ function requestCard(r) {
     <div><b>Facilities:</b> ${r.facilities.length ? r.facilities.map(esc).join(', ') : '—'}</div>
     <div><b>Equipment:</b> ${equipment}</div>
     ${r.rejectionReason ? `<div><b>Reason:</b> ${esc(r.rejectionReason)}</div>` : ''}
-    <div class="row">${letter}${actions}${cancel}</div>
+    <label for="note-${r.id}">Note for the requester (any status)</label>
+    <textarea id="note-${r.id}" maxlength="1000" rows="2" placeholder="e.g. Please bring your own extension cord.">${esc(r.note || '')}</textarea>
+    <div class="row">${letter}${actions}${cancel}<button class="btn ghost" data-note="${r.id}" type="button">Save note</button></div>
   </div>`;
 }
 
@@ -83,8 +85,17 @@ document.getElementById('tabs').addEventListener('click', e => {
 });
 
 list.addEventListener('click', async e => {
-  const { approve, reject, letter, cancel } = e.target.dataset;
+  const { approve, reject, letter, cancel, note } = e.target.dataset;
   if (letter) { openEndorsement(letter); return; }
+  if (note) {
+    try {
+      await withBusy(e.target, () => api(`/api/admin/requests/${note}/note`, {
+        method: 'PUT', body: { note: document.getElementById('note-' + note).value }
+      }));
+      toast('Note saved. The requester can see it.');
+    } catch (err) { toast(err.message, false); }
+    return;
+  }
   if (cancel) {
     if (!confirm('Cancel this whole event? All offices and registrations are affected.')) return;
     try {

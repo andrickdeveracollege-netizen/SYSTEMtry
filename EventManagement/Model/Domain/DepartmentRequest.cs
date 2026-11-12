@@ -18,6 +18,8 @@ public class DepartmentRequest
     public string? ReviewedBy { get; set; }
     public DateTime? ReviewedAt { get; set; }
     public string? RejectionReason { get; set; }
+    public string? AdminNote { get; set; }       // office note, can be added or changed in any status
+    public DateTime? NoteUpdatedAt { get; set; }
 
     public ICollection<EventFacility> Facilities { get; set; } = new List<EventFacility>();
     public ICollection<EventEquipment> EquipmentItems { get; set; } = new List<EventEquipment>();

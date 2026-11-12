@@ -22,6 +22,6 @@ public static class EventMapper
     public static EventDetailDto ToDetail(this CampusEvent e) => new(
         e.ToSummary(), e.RequesterName, e.Role,
         e.DepartmentRequests
-            .Select(d => new DepartmentStatusDto(FacilityMapper.OfficeName(d.Department), d.Status, d.RejectionReason))
+            .Select(d => new DepartmentStatusDto(FacilityMapper.OfficeName(d.Department), d.Status, d.RejectionReason, d.AdminNote))
             .ToList());
 }

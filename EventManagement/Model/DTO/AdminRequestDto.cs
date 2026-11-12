@@ -23,4 +23,5 @@ public record AdminRequestDto(
     bool EndorsementOptional,
     string? EndorsementFileName,
     string? RejectionReason,
+    string? Note,
     DateTime CreatedAt);

@@ -46,6 +46,7 @@ public class AppDBContext : DbContext
         b.Entity<DepartmentRequest>(e =>
         {
             e.Property(x => x.RejectionReason).HasMaxLength(500);
+            e.Property(x => x.AdminNote).HasMaxLength(1000);
             e.Property(x => x.EndorsementStoredName).HasMaxLength(100);
             e.Property(x => x.EndorsementOriginalName).HasMaxLength(260);
             e.HasOne(x => x.CampusEvent).WithMany(c => c.DepartmentRequests)

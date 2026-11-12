@@ -19,6 +19,7 @@ public static class DepartmentRequestMapper
             d.Department == DepartmentType.College,
             d.EndorsementOriginalName,
             d.RejectionReason,
+            d.AdminNote,
             e.CreatedAt);
     }
 }

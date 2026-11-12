@@ -353,6 +353,17 @@ public class EventService : IEventService
         await _deptRequests.SaveAsync();
     }
 
+    // A note can be added or changed at any time: pending, approved, rejected, even after the event is cancelled.
+    public async Task SetNoteAsync(int id, DepartmentType? dept, string note)
+    {
+        var dr = await _deptRequests.GetByIdAsync(id) ?? throw new ServiceException("Request not found.", 404);
+        if (dept.HasValue && dr.Department != dept) throw new ServiceException("This request belongs to another office.", 403);
+        var text = note?.Trim();
+        dr.AdminNote = string.IsNullOrEmpty(text) ? null : text;
+        dr.NoteUpdatedAt = DateTime.Now;
+        await _deptRequests.SaveAsync();
+    }
+
     // Admins can cancel (soft delete) an event. An office admin only for events that involve their office.
     public async Task AdminCancelEventAsync(int eventId, DepartmentType? dept)
     {

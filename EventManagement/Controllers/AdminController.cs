@@ -55,6 +55,14 @@ public class AdminController : ControllerBase
         return PhysicalFile(path, contentType);
     }
 
+    // Notes for the requester. Allowed in every status (pending, approved, rejected).
+    [HttpPut("requests/{id:int}/note")]
+    public async Task<IActionResult> Note(int id, NoteDto dto)
+    {
+        await _events.SetNoteAsync(id, Scope, dto.Note);
+        return Ok(new { message = "Note saved." });
+    }
+
     // Admins can cancel (soft delete) an event
     [HttpDelete("events/{id:int}")]
     public async Task<IActionResult> CancelEvent(int id)
