@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EventManagement.Migrations
 {
     [DbContext(typeof(AppDBContext))]
-    [Migration("20261106173018_PersistOtherFacilityName")]
-    partial class PersistOtherFacilityName
+    [Migration("20261110141838_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,7 +33,7 @@ namespace EventManagement.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("ApproverDepartment")
+                    b.Property<int>("Capacity")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -42,31 +42,26 @@ namespace EventManagement.Migrations
                     b.Property<DateTime>("EndTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("EndorsementOriginalName")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<bool>("IsGuest")
+                        .HasColumnType("bit");
 
-                    b.Property<string>("EndorsementStoredName")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<bool>("IsInstitutional")
+                        .HasColumnType("bit");
 
-                    b.Property<int>("FacilityId")
-                        .HasColumnType("int");
+                    b.Property<string>("ManageCode")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("nvarchar(12)");
 
                     b.Property<string>("Organization")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<string>("OtherFacilityName")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<string>("Purpose")
                         .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
-
-                    b.Property<string>("RejectionReason")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("RequesterEmail")
                         .IsRequired()
@@ -78,11 +73,12 @@ namespace EventManagement.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("RequesterPhone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
-                    b.Property<string>("ReviewedBy")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<bool>("RequiresRegistration")
+                        .HasColumnType("bit");
 
                     b.Property<int>("Role")
                         .HasColumnType("int");
@@ -103,9 +99,52 @@ namespace EventManagement.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FacilityId", "StartTime", "EndTime");
+                    b.HasIndex("StartTime", "EndTime");
 
                     b.ToTable("Events");
+                });
+
+            modelBuilder.Entity("EventManagement.Model.Domain.DepartmentRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CampusEventId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Department")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EndorsementOriginalName")
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<string>("EndorsementStoredName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampusEventId", "Department")
+                        .IsUnique();
+
+                    b.ToTable("DepartmentRequests");
                 });
 
             modelBuilder.Entity("EventManagement.Model.Domain.Equipment", b =>
@@ -226,7 +265,7 @@ namespace EventManagement.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("CampusEventId")
+                    b.Property<int>("DepartmentRequestId")
                         .HasColumnType("int");
 
                     b.Property<int>("EquipmentId")
@@ -239,26 +278,41 @@ namespace EventManagement.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<string>("RejectionReason")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ReviewedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("CampusEventId");
+                    b.HasIndex("DepartmentRequestId");
 
                     b.HasIndex("EquipmentId");
 
                     b.ToTable("EventEquipments");
+                });
+
+            modelBuilder.Entity("EventManagement.Model.Domain.EventFacility", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DepartmentRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FacilityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OtherName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FacilityId");
+
+                    b.HasIndex("DepartmentRequestId", "FacilityId")
+                        .IsUnique();
+
+                    b.ToTable("EventFacilities");
                 });
 
             modelBuilder.Entity("EventManagement.Model.Domain.EventRegistration", b =>
@@ -271,6 +325,9 @@ namespace EventManagement.Migrations
 
                     b.Property<int>("CampusEventId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("Cancelled")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("Confirmed")
                         .HasColumnType("bit");
@@ -307,8 +364,14 @@ namespace EventManagement.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("Capacity")
+                        .HasColumnType("int");
+
                     b.Property<int>("Department")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsOther")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -326,199 +389,292 @@ namespace EventManagement.Migrations
                         new
                         {
                             Id = 1,
+                            Capacity = 2000,
                             Department = 1,
+                            IsOther = false,
                             Name = "Field"
                         },
                         new
                         {
                             Id = 2,
+                            Capacity = 1000,
                             Department = 1,
+                            IsOther = false,
                             Name = "Gym"
                         },
                         new
                         {
                             Id = 3,
+                            Capacity = 40,
                             Department = 1,
+                            IsOther = false,
                             Name = "Dance Room"
                         },
                         new
                         {
                             Id = 4,
+                            Capacity = 150,
                             Department = 1,
+                            IsOther = false,
                             Name = "Blessed Diana Hall"
                         },
                         new
                         {
                             Id = 5,
+                            Capacity = 180,
                             Department = 1,
+                            IsOther = false,
                             Name = "Auditorium"
                         },
                         new
                         {
                             Id = 6,
+                            Capacity = 800,
                             Department = 1,
+                            IsOther = false,
                             Name = "Elem Grounds"
                         },
                         new
                         {
                             Id = 7,
-                            Department = 2,
-                            Name = "Comlab 1"
+                            Department = 1,
+                            IsOther = true,
+                            Name = "Others"
                         },
                         new
                         {
                             Id = 8,
+                            Capacity = 40,
                             Department = 2,
-                            Name = "Comlab 2"
+                            IsOther = false,
+                            Name = "Comlab 1"
                         },
                         new
                         {
                             Id = 9,
+                            Capacity = 40,
                             Department = 2,
-                            Name = "Comlab 3"
+                            IsOther = false,
+                            Name = "Comlab 2"
                         },
                         new
                         {
                             Id = 10,
+                            Capacity = 40,
                             Department = 2,
-                            Name = "Comlab 4"
+                            IsOther = false,
+                            Name = "Comlab 3"
                         },
                         new
                         {
                             Id = 11,
+                            Capacity = 40,
                             Department = 2,
-                            Name = "Comlab 5"
+                            IsOther = false,
+                            Name = "Comlab 4"
                         },
                         new
                         {
                             Id = 12,
-                            Department = 3,
-                            Name = "AULA MAYOR"
+                            Capacity = 40,
+                            Department = 2,
+                            IsOther = false,
+                            Name = "Comlab 5"
                         },
                         new
                         {
                             Id = 13,
-                            Department = 3,
-                            Name = "Deans Conference"
+                            Department = 2,
+                            IsOther = true,
+                            Name = "Others"
                         },
                         new
                         {
                             Id = 14,
+                            Capacity = 100,
                             Department = 3,
-                            Name = "UNO"
+                            IsOther = false,
+                            Name = "AULA MAYOR"
                         },
                         new
                         {
                             Id = 15,
+                            Capacity = 20,
                             Department = 3,
-                            Name = "DOS"
+                            IsOther = false,
+                            Name = "Deans Conference"
                         },
                         new
                         {
                             Id = 16,
+                            Capacity = 45,
                             Department = 3,
-                            Name = "TRES"
+                            IsOther = false,
+                            Name = "UNO"
                         },
                         new
                         {
                             Id = 17,
+                            Capacity = 45,
                             Department = 3,
-                            Name = "QUATRO"
+                            IsOther = false,
+                            Name = "DOS"
                         },
                         new
                         {
                             Id = 18,
+                            Capacity = 45,
                             Department = 3,
-                            Name = "CINCO"
+                            IsOther = false,
+                            Name = "TRES"
                         },
                         new
                         {
                             Id = 19,
+                            Capacity = 45,
                             Department = 3,
-                            Name = "SEIS"
+                            IsOther = false,
+                            Name = "QUATRO"
                         },
                         new
                         {
                             Id = 20,
+                            Capacity = 45,
                             Department = 3,
-                            Name = "CARITAS"
+                            IsOther = false,
+                            Name = "CINCO"
                         },
                         new
                         {
                             Id = 21,
+                            Capacity = 45,
                             Department = 3,
-                            Name = "FORTITUDO"
+                            IsOther = false,
+                            Name = "SEIS"
                         },
                         new
                         {
                             Id = 22,
+                            Capacity = 45,
                             Department = 3,
-                            Name = "JUSTITIA"
+                            IsOther = false,
+                            Name = "CARITAS"
                         },
                         new
                         {
                             Id = 23,
-                            Department = 4,
-                            Name = "Single Room"
+                            Capacity = 45,
+                            Department = 3,
+                            IsOther = false,
+                            Name = "FORTITUDO"
                         },
                         new
                         {
                             Id = 24,
-                            Department = 4,
-                            Name = "Double Room"
+                            Capacity = 45,
+                            Department = 3,
+                            IsOther = false,
+                            Name = "JUSTITIA"
                         },
                         new
                         {
                             Id = 25,
-                            Department = 4,
-                            Name = "Classrooms"
+                            Department = 3,
+                            IsOther = true,
+                            Name = "Others"
                         },
                         new
                         {
                             Id = 26,
+                            Capacity = 10,
                             Department = 4,
-                            Name = "FBS Lab"
+                            IsOther = false,
+                            Name = "Single Room"
                         },
                         new
                         {
                             Id = 27,
+                            Capacity = 20,
                             Department = 4,
-                            Name = "BBP Lab"
+                            IsOther = false,
+                            Name = "Double Room"
                         },
                         new
                         {
                             Id = 28,
+                            Capacity = 45,
                             Department = 4,
-                            Name = "Cookery Lab"
+                            IsOther = false,
+                            Name = "Classrooms"
                         },
                         new
                         {
                             Id = 29,
+                            Capacity = 30,
                             Department = 4,
-                            Name = "Ange Cafe"
+                            IsOther = false,
+                            Name = "FBS Lab"
                         },
                         new
                         {
                             Id = 30,
-                            Department = 1,
-                            Name = "Others"
+                            Capacity = 30,
+                            Department = 4,
+                            IsOther = false,
+                            Name = "BBP Lab"
                         },
                         new
                         {
                             Id = 31,
-                            Department = 2,
-                            Name = "Others"
+                            Capacity = 30,
+                            Department = 4,
+                            IsOther = false,
+                            Name = "Cookery Lab"
                         },
                         new
                         {
                             Id = 32,
-                            Department = 3,
-                            Name = "Others"
+                            Capacity = 50,
+                            Department = 4,
+                            IsOther = false,
+                            Name = "Ange Cafe"
                         },
                         new
                         {
                             Id = 33,
                             Department = 4,
+                            IsOther = true,
+                            Name = "Others"
+                        },
+                        new
+                        {
+                            Id = 34,
+                            Capacity = 100,
+                            Department = 5,
+                            IsOther = false,
+                            Name = "MAIN LIB"
+                        },
+                        new
+                        {
+                            Id = 35,
+                            Capacity = 60,
+                            Department = 5,
+                            IsOther = false,
+                            Name = "LOWER LIB"
+                        },
+                        new
+                        {
+                            Id = 36,
+                            Capacity = 40,
+                            Department = 5,
+                            IsOther = false,
+                            Name = "IMC"
+                        },
+                        new
+                        {
+                            Id = 37,
+                            Department = 5,
+                            IsOther = true,
                             Name = "Others"
                         });
                 });
@@ -545,9 +701,15 @@ namespace EventManagement.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
 
                     b.Property<int>("Role")
                         .HasColumnType("int");
@@ -560,22 +722,22 @@ namespace EventManagement.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("EventManagement.Model.Domain.CampusEvent", b =>
+            modelBuilder.Entity("EventManagement.Model.Domain.DepartmentRequest", b =>
                 {
-                    b.HasOne("EventManagement.Model.Domain.Facility", "Facility")
-                        .WithMany("Events")
-                        .HasForeignKey("FacilityId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.HasOne("EventManagement.Model.Domain.CampusEvent", "CampusEvent")
+                        .WithMany("DepartmentRequests")
+                        .HasForeignKey("CampusEventId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Facility");
+                    b.Navigation("CampusEvent");
                 });
 
             modelBuilder.Entity("EventManagement.Model.Domain.EventEquipment", b =>
                 {
-                    b.HasOne("EventManagement.Model.Domain.CampusEvent", "CampusEvent")
+                    b.HasOne("EventManagement.Model.Domain.DepartmentRequest", "DepartmentRequest")
                         .WithMany("EquipmentItems")
-                        .HasForeignKey("CampusEventId")
+                        .HasForeignKey("DepartmentRequestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -585,9 +747,28 @@ namespace EventManagement.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("CampusEvent");
+                    b.Navigation("DepartmentRequest");
 
                     b.Navigation("Equipment");
+                });
+
+            modelBuilder.Entity("EventManagement.Model.Domain.EventFacility", b =>
+                {
+                    b.HasOne("EventManagement.Model.Domain.DepartmentRequest", "DepartmentRequest")
+                        .WithMany("Facilities")
+                        .HasForeignKey("DepartmentRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EventManagement.Model.Domain.Facility", "Facility")
+                        .WithMany("EventFacilities")
+                        .HasForeignKey("FacilityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DepartmentRequest");
+
+                    b.Navigation("Facility");
                 });
 
             modelBuilder.Entity("EventManagement.Model.Domain.EventRegistration", b =>
@@ -603,14 +784,21 @@ namespace EventManagement.Migrations
 
             modelBuilder.Entity("EventManagement.Model.Domain.CampusEvent", b =>
                 {
-                    b.Navigation("EquipmentItems");
+                    b.Navigation("DepartmentRequests");
 
                     b.Navigation("Registrations");
                 });
 
+            modelBuilder.Entity("EventManagement.Model.Domain.DepartmentRequest", b =>
+                {
+                    b.Navigation("EquipmentItems");
+
+                    b.Navigation("Facilities");
+                });
+
             modelBuilder.Entity("EventManagement.Model.Domain.Facility", b =>
                 {
-                    b.Navigation("Events");
+                    b.Navigation("EventFacilities");
                 });
 #pragma warning restore 612, 618
         }

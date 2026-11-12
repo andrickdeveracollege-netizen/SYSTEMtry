@@ -80,6 +80,25 @@ public class EventService : IEventService
             throw new ServiceException("An endorsement letter (image, PDF or DOCX) is required for this facility.");
         }
 
+        var requestsByDepartment = items.GroupBy(item => item.Department)
+            .ToDictionary(group => group.Key, group => group.Select(item => item.Item).ToList());
+        var departments = requestsByDepartment.Keys.Append(facility.Department).Distinct();
+        var departmentRequests = new List<DepartmentRequest>();
+        foreach (var department in departments)
+        {
+            var request = new DepartmentRequest
+            {
+                Department = department,
+                EndorsementStoredName = storedName,
+                EndorsementOriginalName = originalName
+            };
+            if (department == facility.Department)
+                request.Facilities.Add(new EventFacility { FacilityId = facility.Id, OtherName = otherFacilityName });
+            if (requestsByDepartment.TryGetValue(department, out var departmentItems))
+                foreach (var item in departmentItems) request.EquipmentItems.Add(item);
+            departmentRequests.Add(request);
+        }
+
         var ev = new CampusEvent
         {
             Title = dto.Title.Trim(),
@@ -89,73 +108,64 @@ public class EventService : IEventService
             Role = dto.Role,
             TargetAudience = dto.TargetAudience,
             Purpose = dto.Purpose.Trim(),
-            FacilityId = facility.Id,
-            OtherFacilityName = otherFacilityName,
             StartTime = dto.StartTime,
             EndTime = dto.EndTime,
             Status = EventStatus.Pending,
-            ApproverDepartment = facility.Department,     // approval routing
-            EndorsementStoredName = storedName,
-            EndorsementOriginalName = originalName,
-            EquipmentItems = items
+            DepartmentRequests = departmentRequests
         };
         await _events.AddAsync(ev);
-        ev.Facility = facility;
         return ev.ToSummary();
     }
 
     public async Task<List<AdminRequestDto>> GetRequestsForAdminAsync(DepartmentType dept, EventStatus status) =>
-        (await _events.GetByDepartmentAsync(dept, status)).Select(e => e.ToAdminDto()).ToList();
+        (await _events.GetByDepartmentAsync(dept, status)).Select(e => e.ToAdminDto(dept)).ToList();
 
     public async Task ApproveAsync(int id, DepartmentType dept, string adminEmail)
     {
         var ev = await LoadForReviewAsync(id, dept);
-        if (await _events.HasConflictAsync(ev.FacilityId, ev.StartTime, ev.EndTime, approvedOnly: true, excludeId: ev.Id))
-            throw new ServiceException("Another approved event already uses this facility at that time.", 409);
+        var request = GetDepartmentRequest(ev, dept);
+        foreach (var facility in request.Facilities)
+            if (await _events.HasConflictAsync(facility.FacilityId, ev.StartTime, ev.EndTime, approvedOnly: true, excludeId: ev.Id))
+                throw new ServiceException("Another approved event already uses this facility at that time.", 409);
 
-        ev.Status = EventStatus.Approved;
-        ev.ReviewedBy = adminEmail;
-        ev.ReviewedAt = DateTime.Now;
-        ev.RejectionReason = null;
+        request.Status = EventStatus.Approved;
+        request.ReviewedBy = adminEmail;
+        request.ReviewedAt = DateTime.Now;
+        request.RejectionReason = null;
+        ev.RecomputeStatus();
         await _events.SaveAsync();
     }
 
     public async Task RejectAsync(int id, DepartmentType dept, string adminEmail, string reason)
     {
         var ev = await LoadForReviewAsync(id, dept);
-        ev.Status = EventStatus.Rejected;
-        ev.ReviewedBy = adminEmail;
-        ev.ReviewedAt = DateTime.Now;
-        ev.RejectionReason = reason.Trim();
-
-        // A rejected event no longer needs its pending equipment
-        foreach (var item in ev.EquipmentItems.Where(i => i.Status == EventStatus.Pending))
-        {
-            item.Status = EventStatus.Rejected;
-            item.ReviewedBy = adminEmail;
-            item.ReviewedAt = DateTime.Now;
-            item.RejectionReason = "The event request was rejected.";
-        }
+        var request = GetDepartmentRequest(ev, dept);
+        request.Status = EventStatus.Rejected;
+        request.ReviewedBy = adminEmail;
+        request.ReviewedAt = DateTime.Now;
+        request.RejectionReason = reason.Trim();
+        ev.RecomputeStatus();
         await _events.SaveAsync();
     }
 
     public async Task<(string PhysicalPath, string ContentType, string DownloadName)> GetEndorsementAsync(int id, DepartmentType dept)
     {
         var ev = await _events.GetByIdAsync(id) ?? throw new ServiceException("Request not found.", 404);
-        if (ev.ApproverDepartment != dept) throw new ServiceException("Not allowed.", 403);
-        if (ev.EndorsementStoredName == null) throw new ServiceException("No endorsement letter was uploaded.", 404);
+        var request = ev.DepartmentRequests.FirstOrDefault(r => r.Department == dept)
+                      ?? throw new ServiceException("Not allowed.", 403);
+        if (request.EndorsementStoredName == null) throw new ServiceException("No endorsement letter was uploaded.", 404);
 
-        var path = Path.Combine(UploadDir, ev.EndorsementStoredName);
+        var path = Path.Combine(UploadDir, request.EndorsementStoredName);
         if (!File.Exists(path)) throw new ServiceException("File is missing on the server.", 404);
 
-        var ext = Path.GetExtension(ev.EndorsementStoredName);
+        var ext = Path.GetExtension(request.EndorsementStoredName);
         return (path, AllowedFiles.GetValueOrDefault(ext, "application/octet-stream"),
-                ev.EndorsementOriginalName ?? ev.EndorsementStoredName);
+                request.EndorsementOriginalName ?? request.EndorsementStoredName);
     }
 
-    private async Task<List<EventEquipment>> BuildEquipmentItemsAsync(List<EquipmentRequestItemDto> requested)
+    private async Task<List<(EventEquipment Item, DepartmentType Department)>> BuildEquipmentItemsAsync(List<EquipmentRequestItemDto> requested)
     {
-        var items = new List<EventEquipment>();
+        var items = new List<(EventEquipment Item, DepartmentType Department)>();
         if (requested.Count == 0) return items;
 
         var catalog = (await _equipment.GetAllAsync()).ToDictionary(x => x.Id);
@@ -163,7 +173,7 @@ public class EventService : IEventService
         {
             if (!catalog.TryGetValue(req.EquipmentId, out var eq))
                 throw new ServiceException("Selected equipment does not exist.");
-            if (items.Any(i => i.EquipmentId == eq.Id))
+            if (items.Any(i => i.Item.EquipmentId == eq.Id))
                 throw new ServiceException($"{eq.Name} was selected more than once.");
             if (req.Quantity < 1 || req.Quantity > 100)
                 throw new ServiceException($"Quantity for {eq.Name} must be between 1 and 100.");
@@ -171,12 +181,12 @@ public class EventService : IEventService
                 throw new ServiceException(
                     $"Please describe the 'Others' equipment for {FacilityMapper.OfficeName(eq.Department)}.");
 
-            items.Add(new EventEquipment
+            items.Add((new EventEquipment
             {
                 EquipmentId = eq.Id,
                 Quantity = req.Quantity,
                 Notes = string.IsNullOrWhiteSpace(req.Notes) ? null : req.Notes.Trim()
-            });
+            }, eq.Department));
         }
         return items;
     }
@@ -184,10 +194,14 @@ public class EventService : IEventService
     private async Task<CampusEvent> LoadForReviewAsync(int id, DepartmentType dept)
     {
         var ev = await _events.GetByIdAsync(id) ?? throw new ServiceException("Request not found.", 404);
-        if (ev.ApproverDepartment != dept) throw new ServiceException("This request belongs to another office.", 403);
-        if (ev.Status != EventStatus.Pending) throw new ServiceException("This request was already reviewed.");
+        var request = ev.DepartmentRequests.FirstOrDefault(r => r.Department == dept);
+        if (request == null) throw new ServiceException("This request belongs to another office.", 403);
+        if (request.Status != EventStatus.Pending) throw new ServiceException("This request was already reviewed.");
         return ev;
     }
+
+    private static DepartmentRequest GetDepartmentRequest(CampusEvent ev, DepartmentType dept) =>
+        ev.DepartmentRequests.First(request => request.Department == dept);
 
     private async Task<(string stored, string original)> SaveFileAsync(IFormFile file)
     {

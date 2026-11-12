@@ -9,5 +9,6 @@ public class EventRegistration
     public string FullName { get; set; } = string.Empty;
     public YearLevel YearLevel { get; set; }
     public bool Confirmed { get; set; }
+    public bool Cancelled { get; set; }         // soft cancel, keeps history
     public DateTime RegisteredAt { get; set; } = DateTime.Now;
 }

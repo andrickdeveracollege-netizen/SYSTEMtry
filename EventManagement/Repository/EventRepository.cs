@@ -10,30 +10,37 @@ public class EventRepository : IEventRepository
     public EventRepository(AppDBContext db) => _db = db;
 
     public Task<List<CampusEvent>> GetBulletinAsync(DateTime now) =>
-        _db.Events.AsNoTracking().Include(e => e.Facility)
+        _db.Events.AsNoTracking()
+            .Include(e => e.DepartmentRequests).ThenInclude(r => r.Facilities).ThenInclude(f => f.Facility)
             .Where(e => e.Status == EventStatus.Approved && e.EndTime >= now)
             .OrderBy(e => e.StartTime).ToListAsync();
 
     public Task<List<CampusEvent>> GetCalendarAsync(DateTime from, DateTime to, int? facilityId)
     {
-        var q = _db.Events.AsNoTracking().Include(e => e.Facility)
+        var q = _db.Events.AsNoTracking()
+            .Include(e => e.DepartmentRequests).ThenInclude(r => r.Facilities).ThenInclude(f => f.Facility)
             .Where(e => e.Status != EventStatus.Rejected && e.StartTime < to && e.EndTime > from);
-        if (facilityId.HasValue) q = q.Where(e => e.FacilityId == facilityId.Value);
+        if (facilityId.HasValue)
+            q = q.Where(e => e.DepartmentRequests.Any(r => r.Facilities.Any(f => f.FacilityId == facilityId.Value)));
         return q.OrderBy(e => e.StartTime).ToListAsync();
     }
 
     public Task<List<CampusEvent>> GetByDepartmentAsync(DepartmentType dept, EventStatus status) =>
-        _db.Events.AsNoTracking().Include(e => e.Facility)
-            .Where(e => e.ApproverDepartment == dept && e.Status == status)
+        _db.Events.AsNoTracking()
+            .Include(e => e.DepartmentRequests).ThenInclude(r => r.Facilities).ThenInclude(f => f.Facility)
+            .Where(e => e.DepartmentRequests.Any(r => r.Department == dept && r.Status == status))
             .OrderBy(e => e.StartTime).ToListAsync();
 
     public Task<CampusEvent?> GetByIdAsync(int id) =>
-        _db.Events.Include(e => e.Facility).Include(e => e.EquipmentItems)
+        _db.Events
+            .Include(e => e.DepartmentRequests).ThenInclude(r => r.Facilities).ThenInclude(f => f.Facility)
+            .Include(e => e.DepartmentRequests).ThenInclude(r => r.EquipmentItems).ThenInclude(i => i.Equipment)
             .FirstOrDefaultAsync(e => e.Id == id);
 
     public Task<bool> HasConflictAsync(int facilityId, DateTime start, DateTime end, bool approvedOnly, int? excludeId = null)
     {
-        var q = _db.Events.Where(e => e.FacilityId == facilityId && e.StartTime < end && start < e.EndTime);
+        var q = _db.Events.Where(e => e.StartTime < end && start < e.EndTime
+            && e.DepartmentRequests.Any(r => r.Facilities.Any(f => f.FacilityId == facilityId)));
         q = approvedOnly
             ? q.Where(e => e.Status == EventStatus.Approved)
             : q.Where(e => e.Status != EventStatus.Rejected);

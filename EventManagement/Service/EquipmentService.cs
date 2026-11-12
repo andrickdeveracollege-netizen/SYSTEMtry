@@ -25,31 +25,36 @@ public class EquipmentService : IEquipmentService
     public async Task ApproveAsync(int id, DepartmentType dept, string adminEmail)
     {
         var item = await LoadForReviewAsync(id, dept);
-        item.Status = EventStatus.Approved;
-        item.ReviewedBy = adminEmail;
-        item.ReviewedAt = DateTime.Now;
-        item.RejectionReason = null;
+        var request = item.DepartmentRequest!;
+        request.Status = EventStatus.Approved;
+        request.ReviewedBy = adminEmail;
+        request.ReviewedAt = DateTime.Now;
+        request.RejectionReason = null;
+        request.CampusEvent?.RecomputeStatus();
         await _items.SaveAsync();
     }
 
     public async Task RejectAsync(int id, DepartmentType dept, string adminEmail, string reason)
     {
         var item = await LoadForReviewAsync(id, dept);
-        item.Status = EventStatus.Rejected;
-        item.ReviewedBy = adminEmail;
-        item.ReviewedAt = DateTime.Now;
-        item.RejectionReason = reason.Trim();
+        var request = item.DepartmentRequest!;
+        request.Status = EventStatus.Rejected;
+        request.ReviewedBy = adminEmail;
+        request.ReviewedAt = DateTime.Now;
+        request.RejectionReason = reason.Trim();
+        request.CampusEvent?.RecomputeStatus();
         await _items.SaveAsync();
     }
 
     private async Task<EventEquipment> LoadForReviewAsync(int id, DepartmentType dept)
     {
         var item = await _items.GetByIdAsync(id) ?? throw new ServiceException("Equipment request not found.", 404);
-        if (item.Equipment!.Department != dept)
+        var request = item.DepartmentRequest;
+        if (item.Equipment!.Department != dept || request?.Department != dept)
             throw new ServiceException("This equipment belongs to another office.", 403);
-        if (item.Status != EventStatus.Pending)
+        if (request.Status != EventStatus.Pending)
             throw new ServiceException("This equipment request was already reviewed.");
-        if (item.CampusEvent!.Status == EventStatus.Rejected)
+        if (request.CampusEvent == null || request.CampusEvent.Status == EventStatus.Rejected)
             throw new ServiceException("The event request was rejected.");
         return item;
     }
