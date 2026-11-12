@@ -119,7 +119,7 @@ function renderNav(el) {
 
   const u = Auth.user;
   if (!u) {
-    el.innerHTML = '<a href="/index.html">Home</a><a href="/visitor.html">Visitors</a>';
+    el.innerHTML = '<a href="/visitor.html">Visitors</a>';
     markActive(el);
     return;
   }
@@ -127,7 +127,8 @@ function renderNav(el) {
   // Admins only manage events, so they get no Register / Request links
   const dashboard = u.isAdmin ? '' :
     `<div class="nav-dropdown"><a class="nav-dropdown-toggle" href="/dashboard.html">Dashboard ▾</a><div class="nav-dropdown-menu"><a href="/register.html">Register for an Event</a><a href="/request.html">Request an Event</a></div></div>`;
-  el.innerHTML = `<a href="/index.html">Bulletin</a>` + dashboard +
+  const myEvents = u.isAdmin ? '' : '<a href="/dashboard.html#my-events">My Events</a>';
+  el.innerHTML = `<a href="/index.html">Bulletin</a>` + myEvents + dashboard +
     (u.isAdmin ? '<a href="/admin.html">Approvals</a>' : '') +
     (u.isSuperAdmin ? '<a href="/superadmin.html">Super admin</a>' : '') +
     `<a href="#" id="logoutLink">Sign out</a>`;
@@ -140,6 +141,9 @@ function renderNav(el) {
 
 function markActive(el) {
   for (const a of el.querySelectorAll('a')) {
-    if (a.href && new URL(a.href).pathname === location.pathname) a.classList.add('active');
+    if (!a.href) continue;
+    const url = new URL(a.href);
+    // "My Events" (#my-events) and "Dashboard" share a page, so the hash decides which one is lit
+    if (url.pathname === location.pathname && url.hash === location.hash) a.classList.add('active');
   }
 }
