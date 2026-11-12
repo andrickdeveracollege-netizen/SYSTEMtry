@@ -1,4 +1,4 @@
-﻿using EventManagement.Model.Domain;
+using EventManagement.Model.Domain;
 
 namespace EventManagement.Model.DTO;
 
@@ -7,4 +7,6 @@ public record FacilityDto(
     string Name,
     DepartmentType Department,
     string ApprovingOffice,
-    bool EndorsementOptional);
+    bool EndorsementOptional,
+    int? Capacity,
+    bool IsOther);

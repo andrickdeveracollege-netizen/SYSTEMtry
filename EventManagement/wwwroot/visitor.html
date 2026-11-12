@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Visitors – Event Management</title>
+    <link rel="icon" type="image/png" href="/images/angelicum-logo.png" />
+    <link rel="stylesheet" href="/css/site.css" />
+    <link rel="stylesheet" href="/css/board.css" />
+</head>
+<body>
+    <header class="top"><a class="brand" href="/index.html"><img class="brand-logo" src="/images/angelicum-logo.png" alt="UST Angelicum College logo" />UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
+    <main style="max-width:980px">
+        <h1>Visitors &amp; outsiders</h1>
+        <div class="hint-box">You do not need an account. Give your email when you register or request. Outsiders can only book facilities on <b>Saturdays and Sundays</b>, and school events always have priority.</div>
+
+        <div class="dash" style="grid-template-columns:1fr 1fr">
+            <div class="card">
+                <h2>Request an event as a guest</h2>
+                <p class="muted">Use a facility on a weekend.</p>
+                <a class="btn gold" href="/request.html?guest=1">Request as guest</a>
+            </div>
+            <div class="card">
+                <h2>Register for an event</h2>
+                <p class="muted">Only events open to outsiders will accept you.</p>
+                <a class="btn" href="/register.html?guest=1">Register as guest</a>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top:18px">
+            <h2>Manage my guest request</h2>
+            <p class="muted">Use your email and the manage code you got after submitting.</p>
+            <form id="manageForm" novalidate>
+                <label for="mId">Event number</label><input type="number" id="mId" min="1" />
+                <label for="mEmail">Email</label><input type="email" id="mEmail" />
+                <label for="mCode">Manage code</label><input type="text" id="mCode" maxlength="12" />
+                <div class="msg" id="mMsg"></div>
+                <button class="btn" type="submit" id="mFind" style="margin-top:10px">Find my request</button>
+            </form>
+            <div id="manageBox"></div>
+        </div>
+
+        <div class="card" style="margin-top:18px">
+            <h2>Upcoming events</h2>
+            <div id="events"><div class="spinner">Loading…</div></div>
+        </div>
+    </main>
+    <script src="/js/api.js"></script>
+    <script src="/js/visitor.js"></script>
+</body>
+</html>

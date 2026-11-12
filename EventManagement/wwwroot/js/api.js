@@ -1,6 +1,9 @@
-﻿const Auth = {
+const Auth = {
   get token() { return localStorage.getItem('em_token'); },
-  get user() { try { return JSON.parse(localStorage.getItem('em_user') || 'null'); } catch { return null; } },
+  get user() {
+    try { return JSON.parse(localStorage.getItem('em_user') || 'null'); }
+    catch (err) { return null; }
+  },
   save(r) { localStorage.setItem('em_token', r.token); localStorage.setItem('em_user', JSON.stringify(r)); },
   clear() { localStorage.removeItem('em_token'); localStorage.removeItem('em_user'); },
   require(adminOnly = false) {
@@ -11,6 +14,8 @@
   logout() { this.clear(); location.href = '/index.html'; }
 };
 
+// Single place that talks to the API: attaches the token, handles 401 / 403 and error bodies.
+// Public (guest) calls work without a token. A 401 only happens on protected endpoints.
 async function api(path, { method = 'GET', body, form } = {}) {
   const headers = {};
   if (Auth.token) headers['Authorization'] = 'Bearer ' + Auth.token;
@@ -26,9 +31,13 @@ async function api(path, { method = 'GET', body, form } = {}) {
   }
   const text = await res.text();
   let data = null;
-  try { data = text ? JSON.parse(text) : null; } catch { /* not json */ }
+  if (text) {
+    try { data = JSON.parse(text); }
+    catch (err) { data = null; }
+  }
   if (!res.ok) {
-    let msg = (data && (data.message || data.title)) || 'Request failed (' + res.status + ')';
+    let msg = (data && (data.message || data.title))
+      || (res.status === 403 ? 'You are not allowed to do that.' : 'Request failed (' + res.status + ')');
     if (data && data.errors) msg = Object.values(data.errors).flat().join(' ');
     throw new Error(msg);
   }
@@ -36,13 +45,20 @@ async function api(path, { method = 'GET', body, form } = {}) {
 }
 
 async function openEndorsement(id) {
-  const res = await fetch(`/api/admin/requests/${id}/endorsement`, { headers: { Authorization: 'Bearer ' + Auth.token } });
-  if (!res.ok) { let m = 'Could not open file.'; try { m = (await res.json()).message || m; } catch {} alert(m); return; }
-  const name = decodeURIComponent(res.headers.get('X-Download-Name') || 'endorsement');
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  if (blob.type === 'application/pdf' || blob.type.startsWith('image/')) window.open(url, '_blank');
-  else { const a = document.createElement('a'); a.href = url; a.download = name; a.click(); }
+  try {
+    const res = await fetch(`/api/admin/requests/${id}/endorsement`, { headers: { Authorization: 'Bearer ' + Auth.token } });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new Error((data && data.message) || 'Could not open the file.');
+    }
+    const name = decodeURIComponent(res.headers.get('X-Download-Name') || 'endorsement');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    if (blob.type === 'application/pdf' || blob.type.startsWith('image/')) window.open(url, '_blank');
+    else { const a = document.createElement('a'); a.href = url; a.download = name; a.click(); }
+  } catch (err) {
+    toast(err.message, false);
+  }
 }
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -50,27 +66,27 @@ const fmt = d => new Date(d).toLocaleString([], { dateStyle: 'medium', timeStyle
 const fmtTime = d => new Date(d).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 const pad = n => String(n).padStart(2, '0');
 const isoLocal = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+const statusTag = s => `<span class="tag ${String(s).toLowerCase()}">${esc(s)}</span>`;
+const placesOf = e => e.facilityNames.length ? e.facilityNames.join(', ') : 'Equipment only';
 
 function showMsg(el, text, ok) { el.textContent = text; el.className = 'msg ' + (ok ? 'ok' : 'err'); }
 
-function renderNav(el) {
-  const brand = document.querySelector('header.top .brand');
-  if (brand && !brand.querySelector('.brand-logo')) {
-    brand.insertAdjacentHTML('afterbegin', '<img class="brand-logo" src="/images/angelicum-logo.png" alt="UST Angelicum College logo" />');
-  }
-  const u = Auth.user;
-  if (!u) { el.innerHTML = '<a href="/index.html">Home</a>'; return; }
-  el.innerHTML = `<a href="/index.html">Bulletin</a>` +
-    `<div class="nav-dropdown"><a class="nav-dropdown-toggle" href="/dashboard.html">Dashboard ▾</a><div class="nav-dropdown-menu"><a href="/register.html">Register for an Event</a><a href="/request.html">Request an Event</a></div></div>` +
-    (u.isAdmin ? '<a href="/admin.html">Approvals</a>' : '') +
-    `<a href="#" id="logoutLink">Sign out</a>`;
-  document.getElementById('logoutLink').onclick = async e => {
-    e.preventDefault();
-    if (await confirmLogout()) Auth.logout();
-  };
-  for (const a of el.querySelectorAll('a')) {
-    if (a.href && new URL(a.href).pathname === location.pathname) a.classList.add('active');
-  }
+function toast(text, ok = true) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (ok ? '' : ' err');
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 4500);
+}
+
+// Disables a button while a request is running so a form cannot be submitted twice
+async function withBusy(btn, work) {
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Please wait…';
+  try { return await work(); }
+  finally { btn.disabled = false; btn.textContent = label; }
+}
 
 function confirmLogout() {
   return new Promise(resolve => {
@@ -94,4 +110,40 @@ function confirmLogout() {
     modal.onclick = e => { if (e.target === modal) close(false); };
   });
 }
+
+function renderNav(el) {
+  const brand = document.querySelector('header.top .brand');
+  if (brand && !brand.querySelector('.brand-logo')) {
+    brand.insertAdjacentHTML('afterbegin', '<img class="brand-logo" src="/images/angelicum-logo.png" alt="UST Angelicum College logo" />');
+  }
+
+  const u = Auth.user;
+  if (!u) {
+    el.innerHTML = '<a href="/visitor.html">Visitors</a>';
+    markActive(el);
+    return;
+  }
+
+  // Admins only manage events, so they get no Register / Request links
+  const dashboard = u.isAdmin ? '' :
+    `<div class="nav-dropdown"><a class="nav-dropdown-toggle" href="/dashboard.html">Dashboard ▾</a><div class="nav-dropdown-menu"><a href="/register.html">Register for an Event</a><a href="/request.html">Request an Event</a></div></div>`;
+  const myEvents = u.isAdmin ? '' : '<a href="/dashboard.html#my-events">My Events</a>';
+  el.innerHTML = `<a href="/index.html">Bulletin</a>` + myEvents + dashboard +
+    (u.isAdmin ? '<a href="/admin.html">Approvals</a>' : '') +
+    (u.isSuperAdmin ? '<a href="/superadmin.html">Super admin</a>' : '') +
+    `<a href="#" id="logoutLink">Sign out</a>`;
+  document.getElementById('logoutLink').onclick = async e => {
+    e.preventDefault();
+    if (await confirmLogout()) Auth.logout();
+  };
+  markActive(el);
+}
+
+function markActive(el) {
+  for (const a of el.querySelectorAll('a')) {
+    if (!a.href) continue;
+    const url = new URL(a.href);
+    // "My Events" (#my-events) and "Dashboard" share a page, so the hash decides which one is lit
+    if (url.pathname === location.pathname && url.hash === location.hash) a.classList.add('active');
+  }
 }

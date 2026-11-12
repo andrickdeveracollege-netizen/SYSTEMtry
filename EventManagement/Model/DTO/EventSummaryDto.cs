@@ -1,4 +1,4 @@
-﻿using EventManagement.Model.Domain;
+using EventManagement.Model.Domain;
 
 namespace EventManagement.Model.DTO;
 
@@ -7,9 +7,13 @@ public record EventSummaryDto(
     string Title,
     string Organization,
     string Purpose,
-    int FacilityId,
-    string FacilityName,
+    List<int> FacilityIds,
+    List<string> FacilityNames,
     DateTime StartTime,
     DateTime EndTime,
     YearLevel TargetAudience,
+    int Capacity,
+    int Registered,
+    bool IsInstitutional,
+    bool RequiresRegistration,
     EventStatus Status);

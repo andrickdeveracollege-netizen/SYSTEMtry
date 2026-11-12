@@ -1,402 +1,56 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Request an Event</title>
+    <link rel="icon" type="image/png" href="/images/angelicum-logo.png" />
     <link rel="stylesheet" href="/css/site.css" />
-    <style>
-        .eq-group {
-            border: 1px solid var(--line);
-            border-radius: 10px;
-            padding: 12px 14px;
-            margin-top: 10px;
-            background: #fafbfd;
-        }
-
-        .eq-group-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--blue);
-            font-weight: 700;
-        }
-
-        .eq-group-items {
-            display: none;
-        }
-
-            .eq-group-items.open {
-                display: block;
-            }
-
-        .department-group {
-            border: 1px solid var(--line);
-            border-radius: 10px;
-            padding: 12px 14px;
-            margin-top: 10px;
-            background: #fafbfd;
-        }
-
-            .department-group h3 {
-                margin: 0 0 8px;
-                color: var(--blue);
-            }
-
-        .facility-option {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin: 6px 0;
-            font-weight: 600;
-        }
-
-        .department-support {
-            margin-top: 24px;
-        }
-
-        .department-support-options {
-            margin-bottom: 8px;
-        }
-
-        .datetime-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px 12px;
-            padding: 18px;
-            margin-top: 20px;
-            border: 1px solid #d5e4ec;
-            border-radius: 18px;
-            background: linear-gradient(135deg, #eef8fb, #f8fbff);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.8);
-        }
-
-        .datetime-grid input {
-            background: #fff;
-            width: 100%;
-            border: 1px solid #bfd4df;
-            border-radius: 12px;
-            min-height: 44px;
-            box-shadow: 0 3px 8px rgba(11,61,145,.06);
-        }
-
-        .datetime-grid input[type=checkbox] {
-            width: 18px;
-            height: 18px;
-            min-height: 18px;
-            margin: 0;
-            box-shadow: none;
-        }
-
-        .datetime-grid label {
-            color: var(--blue);
-            font-weight: 700;
-        }
-
-        .same-date-option {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 8px;
-            color: var(--muted) !important;
-            font-size: .82rem;
-            font-weight: 400 !important;
-        }
-
-        .support-selection {
-            margin-top: 20px;
-            padding-top: 16px;
-            border-top: 2px solid var(--line);
-        }
-
-        .support-selection,
-        #equipmentSection {
-            padding: 18px;
-            border: 1px solid var(--line);
-            border-radius: 16px;
-            background: #fff;
-            box-shadow: 0 6px 18px rgba(16,24,40,.06);
-        }
-
-        #audienceChecks {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
-        }
-
-        @media (max-width:560px) {
-            .datetime-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-            .eq-group h3 {
-                margin: 0 0 6px;
-                font-size: 1rem;
-                color: var(--blue);
-            }
-
-        .eq-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            padding: 6px 0;
-            border-bottom: 1px dashed var(--line);
-        }
-
-            .eq-row:last-child {
-                border-bottom: 0;
-            }
-
-            .eq-row label {
-                margin: 0;
-                font-weight: 600;
-                min-width: 140px;
-                display: flex;
-                gap: 6px;
-                align-items: center;
-            }
-
-            .eq-row input[type=number] {
-                width: 80px;
-                padding: 6px 8px;
-                border: 1px solid #cbd2e0;
-                border-radius: 8px;
-                font: inherit;
-            }
-
-            .eq-row input[type=text] {
-                flex: 1;
-                min-width: 200px;
-                padding: 6px 8px;
-                border: 1px solid #cbd2e0;
-                border-radius: 8px;
-                font: inherit;
-            }
-    </style>
+    <link rel="stylesheet" href="/css/board.css" />
 </head>
 <body>
     <header class="top"><a class="brand" href="/index.html"><img class="brand-logo" src="/images/angelicum-logo.png" alt="UST Angelicum College logo" />UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
-    <main style="max-width:760px">
+    <main style="max-width:820px">
         <div class="card">
             <h1>Request an Event</h1>
-            <form id="form">
-                <label>Event title</label><input type="text" id="title" required maxlength="200" />
-                <label>Requester name</label><input type="text" id="requesterName" required />
-                <label>Department / Organization / Club</label><input type="text" id="organization" required />
-
-                <label>Role</label>
-                <select id="role" required><option value="">Select…</option><option value="Faculty">Faculty</option><option value="Student">Student</option></select>
+            <div class="hint-box" id="who"></div>
+            <form id="form" novalidate>
+                <label for="title">Event title</label><input type="text" id="title" maxlength="200" />
+                <label for="requesterName">Requester name</label><input type="text" id="requesterName" maxlength="150" />
+                <div id="guestFields" style="display:none">
+                    <label for="guestEmail">Your email (required)</label><input type="email" id="guestEmail" maxlength="200" />
+                    <label for="phone">Phone (optional)</label><input type="text" id="phone" maxlength="30" />
+                </div>
+                <label for="organization">Department / Organization / Club</label><input type="text" id="organization" maxlength="150" />
 
                 <label>Target audience</label>
-                <div id="audienceChecks" class="checks">
+                <div class="checks">
                     <label><input type="checkbox" class="aud" value="1" /> Elementary</label>
                     <label><input type="checkbox" class="aud" value="2" /> JHS</label>
                     <label><input type="checkbox" class="aud" value="4" /> SHS</label>
                     <label><input type="checkbox" class="aud" value="8" /> College</label>
+                    <label><input type="checkbox" class="aud" value="16" /> Outsiders (not from the school)</label>
                 </div>
 
-                <label>Purpose</label><textarea id="purpose" required maxlength="2000"></textarea>
+                <label for="capacity">How many will attend?</label>
+                <input type="number" id="capacity" min="1" max="10000" value="50" />
+                <div class="hint">Only facilities that can hold this many people are shown below.</div>
 
-                <div class="datetime-grid">
-                    <div><label>Start date</label><input type="date" id="startDate" required /></div>
-                    <div><label>Start time</label><input type="time" id="startTime" required /></div>
-                    <div>
-                        <label>End date</label>
-                        <input type="date" id="endDate" required />
-                        <label class="same-date-option"><input type="checkbox" id="sameDate" /> Same date as start</label>
-                    </div>
-                    <div><label>End time</label><input type="time" id="endTime" required /></div>
-                </div>
+                <label for="purpose">Purpose</label><textarea id="purpose" maxlength="2000"></textarea>
+                <label for="start">Start</label><input type="datetime-local" id="start" />
+                <label for="end">End</label><input type="datetime-local" id="end" />
+                <div class="hint" id="weekendHint" style="display:none">Outsiders can only book on Saturdays and Sundays.</div>
 
-                <div class="support-selection">
-                    <label>Department needing support</label>
-                <select id="departmentSelect" required onchange="document.getElementById('facilityLabel').style.display = this.value ? 'block' : 'none'">
-                        <option value="">Select a department…</option>
-                    </select>
-                    <label id="facilityLabel" style="display:none">Facility</label>
-                    <div id="facilityGroups"></div>
-                    <input type="hidden" id="facilityId" required />
-                    <div class="hint" id="route"></div>
-                </div>
-
-                <div id="equipmentSection" style="display:none">
-                    <h2 style="margin-top:24px">Equipment (optional)</h2>
-                    <div class="hint">Each office reviews its own equipment. Tick what you need and set the quantity.</div>
-                    <div id="equipBox"></div>
-                </div>
-
-<div id="endorsementBox" style="display: block;">
-            <label>Endorsement letter</label>
-            <input type="file" id="file" accept=".jpg,.jpeg,.png,.pdf,.docx" style="display: block;" />
-            <div class="hint">Image (JPG/PNG), PDF or DOCX, max 5 MB.</div>
+                <h2 style="margin-top:26px">Which offices do you need?</h2>
+                <div class="hint">Tick each office you need. Then choose its facilities, its equipment, and upload that office's own endorsement letter.</div>
+                <div id="deptBox"><div class="spinner">Loading…</div></div>
 
                 <div class="msg" id="msg"></div>
-                <div style="margin-top:14px"><button class="btn" type="submit" id="submitBtn">Submit request</button> <a class="btn ghost" href="/dashboard.html">Back</a></div>
+                <div style="margin-top:14px"><button class="btn" type="submit" id="submitBtn">Submit request</button> <a class="btn ghost" id="backLink" href="/dashboard.html">Back</a></div>
             </form>
         </div>
     </main>
-    <footer class="site-footer">
-        <div class="footer-contact">
-            <h2>CONTACT</h2>
-            <p>📍 112 Sen. Mariano J. Cuenco, Barangay Sto. Domingo,<br />Quezon City, 1114 Philippines</p>
-            <p>📞 (02) 8732 4243 or 8732 3725</p>
-            <p>✉ info@ustangelicum.edu.ph</p>
-        </div>
-        <div class="footer-bottom">© 2026 <strong>UST Angelicum College</strong> — All Rights Reserved</div>
-    </footer>
     <script src="/js/api.js"></script>
-    <script>
-        if (!Auth.require()) throw new Error('auth');
-        renderNav(document.getElementById('nav'));
-        requesterName.value = Auth.user.fullName;
-        let facilities = [];
-
-        sameDate.onchange = () => {
-            endDate.disabled = sameDate.checked;
-            if (sameDate.checked) endDate.value = startDate.value;
-        };
-        startDate.onchange = () => {
-            if (sameDate.checked) endDate.value = startDate.value;
-        };
-
-        (async () => {
-            // Equipment is seeded with stable IDs in AppDBContext. Keep the
-            // request form usable even when the equipment GET endpoint fails.
-            const fac = await api('/api/facilities');
-            facilities = fac;
-
-            const groups = {};
-            facilities.forEach(f => (groups[f.approvingOffice] ||= []).push(f));
-            const officeNames = {
-                College: 'HED Area (Ms. Judith)',
-                TVET: 'TVET (Ms. Chavez)'
-            };
-            const equipment = [
-                { id: 3, name: 'Table', approvingOffice: 'Auxiliary', isOther: false },
-                { id: 1, name: 'Speaker', approvingOffice: 'Auxiliary', isOther: false },
-                { id: 2, name: 'Microphone', approvingOffice: 'Auxiliary', isOther: false },
-                { id: 6, name: 'Others', approvingOffice: 'Auxiliary', isOther: true },
-                { id: 7, name: 'Computer', approvingOffice: 'ITMC', isOther: false },
-                { id: 8, name: 'Laptop', approvingOffice: 'ITMC', isOther: false },
-                { id: 11, name: 'TV', approvingOffice: 'ITMC', isOther: false },
-                { id: 12, name: 'Others', approvingOffice: 'ITMC', isOther: true },
-            ];
-
-            departmentSelect.insertAdjacentHTML('beforeend', Object.keys(groups).map(office =>
-                `<option value="${esc(office)}">${esc(officeNames[office] || office)}</option>`
-            ).join(''));
-            departmentSelect.onchange = () => {
-                facilityLabel.style.display = departmentSelect.value ? 'block' : 'none';
-                renderDepartment();
-            };
-            renderDepartment();
-
-            function renderDepartment() {
-                const selected = departmentSelect.value;
-                equipmentSection.style.display = facilityId.value ? 'block' : 'none';
-                const selectedFacility = facilityId.value;
-                const selectedFacilityOffice = facilities.find(f => String(f.id) === String(selectedFacility))?.approvingOffice;
-                if (selectedFacilityOffice && selectedFacilityOffice !== selected) facilityId.value = '';
-
-                facilityGroups.innerHTML = selected ? `
-                    <section class="department-group">
-                        <h3>${esc(officeNames[selected] || selected)}</h3>
-                        ${groups[selected].map(f => `<label class="facility-option"><input type="radio" name="facility" value="${f.id}" data-office="${esc(f.approvingOffice)}" ${String(f.id) === String(facilityId.value) ? 'checked' : ''} /> ${esc(f.name)}</label>`).join('')}
-                    </section>` : '';
-
-                facilityGroups.querySelectorAll('input[name=facility]').forEach(r => r.onchange = () => {
-                    facilityId.value = r.value;
-                    equipmentSection.style.display = 'block';
-                    renderEquipment(equipment);
-                    updateRoute();
-                });
-                renderEquipment(equipment);
-                updateRoute();
-            }
-        })().catch(err => showMsg(msg, err.message, false));
-
-        function renderEquipment(list) {
-            const byOffice = {};
-            list.forEach(x => (byOffice[x.approvingOffice] ||= []).push(x));
-            equipBox.innerHTML = Object.entries(byOffice).map(([office, items]) => `
-          <div class="eq-group">
-            <label class="eq-group-header"><input type="checkbox" class="eq-office-check" /> ${esc(office)} equipment</label>
-            <div class="eq-group-items">
-              ${items.map(x => `
-                <div class="eq-row" data-id="${x.id}" data-other="${x.isOther}">
-                  <label><input type="checkbox" class="eqchk" /> ${esc(x.name)}</label>
-                  <input type="number" class="eqqty" min="1" max="100" value="1" disabled title="Quantity" />
-                  ${x.isOther ? '<input type="text" class="eqnote" maxlength="500" placeholder="Describe what you need" disabled />' : ''}
-                </div>`).join('')}
-            </div>
-          </div>`).join('');
-
-            equipBox.querySelectorAll('.eq-office-check').forEach(check => check.onchange = () => {
-                check.closest('.eq-group').querySelector('.eq-group-items').classList.toggle('open', check.checked);
-                if (!check.checked) {
-                    check.closest('.eq-group').querySelectorAll('.eqchk').forEach(item => {
-                        item.checked = false;
-                        item.dispatchEvent(new Event('change'));
-                    });
-                }
-            });
-
-            equipBox.querySelectorAll('.eq-row').forEach(row => {
-                const chk = row.querySelector('.eqchk');
-                chk.onchange = () => row.querySelectorAll('.eqqty, .eqnote').forEach(el => el.disabled = !chk.checked);
-            });
-        }
-
-        function updateRoute() {
-            const f = facilities.find(x => x.id == facilityId.value);
-            if (!f) return;
-            route.textContent = 'Facility will be reviewed by: ' + f.approvingOffice;
-        }
-        form.addEventListener('submit', async e => {
-            e.preventDefault();
-            if (!facilityId.value) return showMsg(msg, 'Please select a facility.', false);
-            const audience = [...document.querySelectorAll('.aud:checked')].reduce((s, c) => s + Number(c.value), 0);
-            if (!audience) return showMsg(msg, 'Please select at least one target audience.', false);
-            if (!startDate.value || !startTime.value || !endDate.value || !endTime.value)
-                return showMsg(msg, 'Please complete the start and end date/time.', false);
-
-            const fd = new FormData();
-            fd.append('Title', title.value);
-            fd.append('RequesterName', requesterName.value);
-            fd.append('Organization', organization.value);
-            fd.append('Role', role.value);
-            fd.append('TargetAudience', audience);
-            fd.append('Purpose', purpose.value);
-            fd.append('FacilityId', facilityId.value);
-            fd.append('StartTime', `${startDate.value}T${startTime.value}`);
-            fd.append('EndTime', `${endDate.value}T${endTime.value}`);
-            // if (file.files[0]) fd.append('Endorsement', file.files[0]);
-
-            // Equipment: Equipment[0].EquipmentId, Equipment[0].Quantity, Equipment[0].Notes ...
-            let i = 0;
-            for (const row of equipBox.querySelectorAll('.eq-row')) {
-                if (!row.querySelector('.eqchk').checked) continue;
-                const note = row.querySelector('.eqnote');
-                if (row.dataset.other === 'true' && !(note && note.value.trim()))
-                    return showMsg(msg, 'Please describe the "Others" equipment you need.', false);
-                fd.append(`Equipment[${i}].EquipmentId`, row.dataset.id);
-                fd.append(`Equipment[${i}].Quantity`, row.querySelector('.eqqty').value || '1');
-                if (note) fd.append(`Equipment[${i}].Notes`, note.value.trim());
-                i++;
-            }
-
-            submitBtn.disabled = true;
-            try {
-                await api('/api/events/request', { method: 'POST', form: fd });
-                showMsg(msg, 'Request submitted! The slot is on hold while it is reviewed.', true);
-                form.reset(); requesterName.value = Auth.user.fullName;
-                equipBox.querySelectorAll('.eqqty, .eqnote').forEach(el => el.disabled = true);
-                updateRoute();
-            } catch (err) { showMsg(msg, err.message, false); }
-            finally { submitBtn.disabled = false; }
-        });
-    </script>
+    <script src="/js/request.js"></script>
 </body>
 </html>

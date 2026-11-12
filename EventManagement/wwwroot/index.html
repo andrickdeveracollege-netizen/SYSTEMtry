@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -15,16 +15,37 @@
     </header>
 
     <main class="home">
-        <!-- LEFT: virtual bulletin board -->
-        <section>
-            <div class="board-head">
-                <h1>Bulletin Board</h1>
-                <span class="muted">Approved upcoming events on campus</span>
+        <!-- LEFT: facility calendar -->
+        <section class="col-cal">
+            <div class="card">
+                <div class="cal-head">
+                    <h2 id="monthTitle"></h2>
+                    <button class="btn ghost" id="prev" type="button">‹</button>
+                    <button class="btn ghost" id="today" type="button">Today</button>
+                    <button class="btn ghost" id="next" type="button">›</button>
+                </div>
+                <select id="facFilter"><option value="">All facilities</option></select>
+                <div class="muted" style="margin:8px 0"><span class="tag approved">Approved</span><span class="tag pending">Pending</span></div>
+                <div id="cal" class="cal mini"></div>
+                <div id="dayList" style="margin-top:12px"></div>
             </div>
-            <div class="cork" id="board"></div>
         </section>
 
-        <!-- RIGHT: sign-in box -->
+        <!-- MIDDLE: bulletin board (cork board image) -->
+        <section class="col-board">
+            <div class="board-head">
+                <h1>Bulletin Board</h1>
+                <span class="muted">Approved upcoming events</span>
+            </div>
+            <div class="cork"><div class="cork-inner" id="board"></div></div>
+            <div class="board-pager">
+                <button class="btn ghost" id="boardPrev" type="button">‹</button>
+                <span class="muted" id="boardPage"></span>
+                <button class="btn ghost" id="boardNext" type="button">›</button>
+            </div>
+        </section>
+
+        <!-- RIGHT (25%): sign-in box -->
         <aside class="side">
             <div class="card" id="signedOut">
                 <h2>Sign in</h2>
@@ -33,13 +54,17 @@
                     <button class="btn" id="tabIn" type="button">Sign in</button>
                     <button class="btn ghost" id="tabUp" type="button">Create account</button>
                 </div>
-                <form id="authForm">
-                    <div id="nameRow" style="display:none"><label>Full name</label><input type="text" id="fullName" /></div>
-                    <label>Angelicum email</label><input type="email" id="email" required placeholder="name@angelicum.edu.ph" />
-                    <label>Password</label><input type="password" id="password" required minlength="8" />
+                <form id="authForm" novalidate>
+                    <div id="nameRow" style="display:none"><label for="fullName">Full name</label><input type="text" id="fullName" /></div>
+                    <label for="email">Angelicum email</label><input type="email" id="email" placeholder="name@ustangelicum.edu.ph" />
+                    <label for="password">Password</label><input type="password" id="password" />
+                    <div class="hint" id="roleHint">Students: firstname.surname.college / .shs / .jhs / .elem<br>Faculty &amp; staff: firstname.surname</div>
                     <div class="msg" id="authMsg"></div>
                     <button class="btn" type="submit" id="authSubmit" style="width:100%;margin-top:12px">Sign in</button>
                 </form>
+                <hr style="border:0;border-top:1px solid var(--line);margin:16px 0" />
+                <div class="muted">Not from the school?</div>
+                <a class="btn gold" href="/visitor.html" style="display:block;text-align:center;margin-top:8px">Continue as visitor</a>
             </div>
 
             <div class="card" id="signedIn" style="display:none">
@@ -47,9 +72,10 @@
                 <p class="who muted" id="who"></p>
                 <div class="stack">
                     <a class="btn gold" href="/dashboard.html">Go to dashboard</a>
-                    <a class="btn" href="/register.html">Register for an Event</a>
-                    <a class="btn" href="/request.html">Request an Event</a>
+                    <a class="btn" id="registerLink" href="/register.html">Register for an Event</a>
+                    <a class="btn" id="requestLink" href="/request.html">Request an Event</a>
                     <a class="btn ghost" id="adminLink" href="/admin.html" style="display:none">Approvals</a>
+                    <a class="btn ghost" id="superLink" href="/superadmin.html" style="display:none">Super admin</a>
                     <button class="btn bad" id="logoutBtn" type="button">Sign out</button>
                 </div>
             </div>
@@ -57,75 +83,7 @@
     </main>
 
     <script src="/js/api.js"></script>
-    <script>
-  renderNav(document.getElementById('nav'));
-
-  // ---------- Side box: signed in vs signed out ----------
-  if (Auth.token && Auth.user) {
-    document.getElementById('signedOut').style.display = 'none';
-    document.getElementById('signedIn').style.display = 'block';
-    document.getElementById('who').textContent = Auth.user.fullName + ' · ' + Auth.user.email;
-    if (Auth.user.isAdmin) document.getElementById('adminLink').style.display = 'block';
-    document.getElementById('logoutBtn').onclick = () => Auth.logout();
-  }
-
-  let mode = 'in';
-  function setMode(m) {
-    mode = m;
-    document.getElementById('nameRow').style.display = m === 'up' ? 'block' : 'none';
-    document.getElementById('authSubmit').textContent = m === 'up' ? 'Create account' : 'Sign in';
-    document.getElementById('tabIn').className = 'btn' + (m === 'in' ? '' : ' ghost');
-    document.getElementById('tabUp').className = 'btn' + (m === 'up' ? '' : ' ghost');
-  }
-  document.getElementById('tabIn').onclick = () => setMode('in');
-  document.getElementById('tabUp').onclick = () => setMode('up');
-
-  document.getElementById('authForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const msg = document.getElementById('authMsg');
-    try {
-      const body = { email: email.value, password: password.value };
-      if (mode === 'up') body.fullName = fullName.value;
-      const r = await api(mode === 'up' ? '/api/auth/register' : '/api/auth/login', { method: 'POST', body });
-      Auth.save(r);
-      location.href = r.isAdmin ? '/admin.html' : '/dashboard.html';
-    } catch (err) { showMsg(msg, err.message, false); }
-  });
-
-  // ---------- Cork board ----------
-  const colors = ['yellow', 'pink', 'blue', 'green', 'orange', 'purple'];
-
-  function noteHtml(e, i) {
-    const d = new Date(e.startTime);
-    const poster = i % 4 === 3 ? ' poster' : '';
-    const purpose = e.purpose.length > 120 ? e.purpose.slice(0, 120) + '…' : e.purpose;
-    return `
-      <article class="note ${colors[e.id % colors.length]} r${i % 5}${poster}">
-        <span class="pin"></span>
-        <div class="when">
-          <div class="day"><b>${d.getDate()}</b><small>${d.toLocaleString([], { month: 'short' })}</small></div>
-          <div class="time">${fmtTime(e.startTime)} – ${fmtTime(e.endTime)}</div>
-        </div>
-        <h3>${esc(e.title)}</h3>
-        <div class="org">${esc(e.organization)}</div>
-        <p>${esc(purpose)}</p>
-        <div class="where">📍 ${esc(e.facilityName)}</div>
-        <div class="tags">${e.targetAudience.split(',').map(t => `<span class="tag">${esc(t.trim())}</span>`).join('')}</div>
-        <div class="go"><a class="btn" href="/register.html?eventId=${e.id}">Register</a></div>
-      </article>`;
-  }
-
-  (async () => {
-    const board = document.getElementById('board');
-    try {
-      const events = await api('/api/events/bulletin');
-      board.innerHTML = events.length
-        ? events.map(noteHtml).join('')
-        : '<div class="empty">No upcoming events yet.<br>Be the first to post one!</div>';
-    } catch (err) {
-      board.innerHTML = '<div class="empty">' + esc(err.message) + '</div>';
-    }
-  })();
-    </script>
+    <script src="/js/calendar.js"></script>
+    <script src="/js/index.js"></script>
 </body>
 </html>

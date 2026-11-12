@@ -1,3 +1,8 @@
-.vs/ 
-bin/ 
-obj/ 
+.vs/
+bin/
+obj/
+*.user
+.vscode/
+App_Data/
+appsettings.Local.json
+secrets.json
