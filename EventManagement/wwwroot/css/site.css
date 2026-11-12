@@ -205,7 +205,7 @@ main > .card {
 body {
     margin: 0;
     font-family: Segoe UI,Roboto,Arial,sans-serif;
-    background: linear-gradient(rgba(244,246,251,.86), rgba(244,246,251,.86)), url('/images/bg.jpeg') center / cover fixed no-repeat;
+    background: linear-gradient(rgba(244,246,251,.86), rgba(244,246,251,.86)), url('/images/bg.jpg') center / cover fixed no-repeat;
     color: var(--ink);
     position: relative;
 }
