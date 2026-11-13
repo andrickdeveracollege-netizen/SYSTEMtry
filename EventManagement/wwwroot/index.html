@@ -9,11 +9,14 @@
     <link rel="stylesheet" href="/css/board.css?v=20261113" />
     <style>
         /* Home layout lives here too, so it still works if the browser holds an old board.css */
-        .home { display: grid; grid-template-columns: minmax(0, 75fr) minmax(260px, 25fr);
+        .home { display: grid; grid-template-columns: minmax(0, 80fr) minmax(320px, 20fr);
                 grid-template-areas: "board side" "cal cal"; gap: 18px; max-width: 1600px; margin: 22px auto; padding: 0 16px; align-items: start; }
         .home .col-board { grid-area: board; min-width: 0; }
         .home .side { grid-area: side; position: sticky; top: 16px; }
         .home .col-cal { grid-area: cal; min-width: 0; }
+        .home .side { min-width: 0; }
+        .home .side .who { overflow-wrap: anywhere; word-break: break-word; }
+        .home .side .btn { white-space: normal; }
         @media (max-width: 1000px) {
             .home { grid-template-columns: 1fr; grid-template-areas: "side" "board" "cal"; }
             .home .side { position: static; }

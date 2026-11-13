@@ -378,3 +378,8 @@
 
     .note { min-height: 130px; }
 }
+
+/* long emails / names wrap inside the narrow right column instead of overflowing */
+.side { min-width: 0; }
+.side .who { overflow-wrap: anywhere; word-break: break-word; }
+.side .btn { white-space: normal; }
