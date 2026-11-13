@@ -11,6 +11,7 @@ public class CampusEvent
     public string Organization { get; set; } = string.Empty;   // Department / Org / Club
     public RequesterRole Role { get; set; }
     public YearLevel TargetAudience { get; set; }
+    public string? AudienceDetail { get; set; }                // optional: specific section / group, e.g. "Grade 11 STEM-A"
     public string Purpose { get; set; } = string.Empty;
     public int Capacity { get; set; }                          // expected attendees = max registrations
 

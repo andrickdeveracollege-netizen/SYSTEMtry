@@ -14,7 +14,7 @@ public static class EventMapper
             e.Id, e.Title, e.Organization, e.Purpose,
             rows.Select(f => f.FacilityId).Distinct().ToList(),
             rows.Select(f => f.DisplayName()).Distinct().ToList(),
-            e.StartTime, e.EndTime, e.TargetAudience,
+            e.StartTime, e.EndTime, e.TargetAudience, e.AudienceDetail,
             e.Capacity, e.Registrations.Count(r => !r.Cancelled),
             e.IsInstitutional, e.RequiresRegistration, e.Status);
     }

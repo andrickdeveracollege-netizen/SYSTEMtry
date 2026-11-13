@@ -11,7 +11,7 @@ public static class DepartmentRequestMapper
         var e = d.CampusEvent!;
         return new(
             d.Id, e.Id, e.Title, e.RequesterName, e.RequesterEmail, e.Organization,
-            e.Role, e.TargetAudience, e.Purpose, e.StartTime, e.EndTime,
+            e.Role, e.TargetAudience, e.AudienceDetail, e.Purpose, e.StartTime, e.EndTime,
             d.Facilities.Select(f => f.DisplayName()).ToList(),
             d.EquipmentItems.Select(i => new AdminEquipmentLineDto(i.Equipment!.Name, i.Quantity, i.Notes)).ToList(),
             d.Status,

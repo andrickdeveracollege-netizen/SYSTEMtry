@@ -31,7 +31,7 @@ instForm.addEventListener('submit', async e => {
     await withBusy(document.getElementById('iBtn'), () => api('/api/superadmin/events', {
       method: 'POST',
       body: {
-        title: g('iTitle'), organization: g('iOrg'), purpose: g('iPurpose'), targetAudience: aud,
+        title: g('iTitle'), organization: g('iOrg'), purpose: g('iPurpose'), targetAudience: aud, audienceDetail: g('iDetail') || null,
         startTime: isoLocal(new Date(g('iStart'))), endTime: isoLocal(new Date(g('iEnd'))), facilityIds: facs
       }
     }));

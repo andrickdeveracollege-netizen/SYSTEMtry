@@ -28,7 +28,7 @@ if (guest) {
 function showAudience() {
   const ev = events.find(e => e.id === Number(eventSelect.value));
   audience.textContent = ev
-    ? `Open to: ${ev.targetAudience} · ${Math.max(0, ev.capacity - ev.registered)} of ${ev.capacity} seats left`
+    ? `Open to: ${ev.targetAudience}${ev.audienceDetail ? ' (' + ev.audienceDetail + ')' : ''} · ${Math.max(0, ev.capacity - ev.registered)} of ${ev.capacity} seats left`
     : '';
 }
 eventSelect.onchange = showAudience;

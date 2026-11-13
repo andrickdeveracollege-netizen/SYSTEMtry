@@ -39,6 +39,7 @@ public class AppDBContext : DbContext
             e.Property(x => x.Organization).HasMaxLength(150).IsRequired();
             e.Property(x => x.Purpose).HasMaxLength(2000).IsRequired();
             e.Property(x => x.RequesterPhone).HasMaxLength(30);
+            e.Property(x => x.AudienceDetail).HasMaxLength(200);
             e.Property(x => x.ManageCode).HasMaxLength(12).IsRequired();
             e.HasIndex(x => new { x.StartTime, x.EndTime });
         });

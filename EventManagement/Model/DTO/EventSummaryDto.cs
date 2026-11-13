@@ -12,6 +12,7 @@ public record EventSummaryDto(
     DateTime StartTime,
     DateTime EndTime,
     YearLevel TargetAudience,
+    string? AudienceDetail,
     int Capacity,
     int Registered,
     bool IsInstitutional,

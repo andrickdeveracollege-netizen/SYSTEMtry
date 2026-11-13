@@ -13,6 +13,7 @@ public record AdminRequestDto(
     string Organization,
     RequesterRole Role,
     YearLevel TargetAudience,
+    string? AudienceDetail,
     string Purpose,
     DateTime StartTime,
     DateTime EndTime,

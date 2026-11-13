@@ -103,6 +103,7 @@ function noteHtml(e, i) {
       </div>
       <h3>${esc(e.title)}</h3>
       <div class="org">${esc(e.organization)}</div>
+      ${e.audienceDetail ? `<div class="org">For: ${esc(e.audienceDetail)}</div>` : ''}
       <div class="where">📍 ${esc(placesOf(e))}</div>
       <div class="seats">${!e.requiresRegistration ? 'Open to all' : left > 0 ? left + ' seats left' : 'Full'}</div>
       <div class="go">${e.requiresRegistration

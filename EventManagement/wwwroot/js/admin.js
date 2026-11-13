@@ -33,7 +33,7 @@ function requestCard(r) {
     ? `<button class="btn bad" data-cancel="${r.eventId}" type="button">Cancel event</button>` : '';
   return `<div class="req">
     <strong>${esc(r.title)}</strong> ${statusTag(r.status)}${r.role === 'Guest' ? ' <span class="tag guest">Outsider</span>' : ''}<br>
-    <span class="muted">${fmt(r.startTime)} – ${fmtTime(r.endTime)} · ${esc(r.organization)} · ${esc(r.role)} · for ${esc(r.targetAudience)}</span>
+    <span class="muted">${fmt(r.startTime)} – ${fmtTime(r.endTime)} · ${esc(r.organization)} · ${esc(r.role)} · for ${esc(r.targetAudience)}${r.audienceDetail ? ' (' + esc(r.audienceDetail) + ')' : ''}</span>
     <p>${esc(r.purpose)}</p>
     <div><b>Requester:</b> ${esc(r.requesterName)} (${esc(r.requesterEmail)})</div>
     <div><b>Facilities:</b> ${r.facilities.length ? r.facilities.map(esc).join(', ') : '—'}</div>

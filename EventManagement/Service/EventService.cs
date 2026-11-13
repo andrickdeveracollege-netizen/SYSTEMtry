@@ -160,6 +160,7 @@ public class EventService : IEventService
             Organization = dto.Organization.Trim(),
             Role = who.Role,
             TargetAudience = dto.TargetAudience,
+            AudienceDetail = CleanDetail(dto.AudienceDetail),
             Purpose = dto.Purpose.Trim(),
             Capacity = dto.Capacity,
             StartTime = dto.StartTime,
@@ -219,6 +220,7 @@ public class EventService : IEventService
             Organization = dto.Organization.Trim(),
             Role = RequesterRole.Administrator,
             TargetAudience = dto.TargetAudience,
+            AudienceDetail = CleanDetail(dto.AudienceDetail),
             Purpose = dto.Purpose.Trim(),
             Capacity = 0,
             StartTime = dto.StartTime,
@@ -391,12 +393,15 @@ public class EventService : IEventService
 
     // --------------------------------------------------------------- helpers
 
+    // Optional field: blank becomes null
+    private static string? CleanDetail(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+
     private static string NewManageCode() => Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
 
     private static EventSummaryDto Summary(CampusEvent ev, List<int> facilityIds, List<string> names) => new(
         ev.Id, ev.Title, ev.Organization, ev.Purpose,
         facilityIds.Distinct().ToList(), names.Distinct().ToList(),
-        ev.StartTime, ev.EndTime, ev.TargetAudience, ev.Capacity, 0,
+        ev.StartTime, ev.EndTime, ev.TargetAudience, ev.AudienceDetail, ev.Capacity, 0,
         ev.IsInstitutional, ev.RequiresRegistration, ev.Status);
 
     // Outsiders must use the guest form; school emails have to sign in

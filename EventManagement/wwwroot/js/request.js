@@ -169,6 +169,7 @@ function buildFormData(selected) {
   fd.append('RequesterName', g('requesterName'));
   fd.append('Organization', g('organization'));
   fd.append('TargetAudience', audienceValue());
+  if (g('audienceDetail')) fd.append('AudienceDetail', g('audienceDetail'));
   fd.append('Capacity', g('capacity'));
   fd.append('Purpose', g('purpose'));
   fd.append('StartTime', isoLocal(new Date(g('start'))));
