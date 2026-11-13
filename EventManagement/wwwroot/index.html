@@ -15,23 +15,7 @@
     </header>
 
     <main class="home">
-        <!-- LEFT: facility calendar -->
-        <section class="col-cal">
-            <div class="card">
-                <div class="cal-head">
-                    <h2 id="monthTitle"></h2>
-                    <button class="btn ghost" id="prev" type="button">‹</button>
-                    <button class="btn ghost" id="today" type="button">Today</button>
-                    <button class="btn ghost" id="next" type="button">›</button>
-                </div>
-                <select id="facFilter"><option value="">All facilities</option></select>
-                <div class="muted" style="margin:8px 0"><span class="tag approved">Approved</span><span class="tag pending">Pending</span></div>
-                <div id="cal" class="cal mini"></div>
-                <div id="dayList" style="margin-top:12px"></div>
-            </div>
-        </section>
-
-        <!-- MIDDLE: bulletin board (cork board image) -->
+        <!-- TOP LEFT: bulletin board (cork board image) -->
         <section class="col-board">
             <div class="board-head">
                 <h1>Bulletin Board</h1>
@@ -80,6 +64,22 @@
                 </div>
             </div>
         </aside>
+
+        <!-- BOTTOM: facility calendar (full width, so nothing is cramped) -->
+        <section class="col-cal">
+            <div class="card">
+                <div class="cal-head">
+                    <h2 id="monthTitle"></h2>
+                    <select id="facFilter"><option value="">All facilities</option></select>
+                    <button class="btn ghost" id="prev" type="button">‹</button>
+                    <button class="btn ghost" id="today" type="button">Today</button>
+                    <button class="btn ghost" id="next" type="button">›</button>
+                </div>
+                <div class="muted" style="margin:8px 0"><span class="tag approved">Approved events</span></div>
+                <div id="cal" class="cal"></div>
+                <div id="dayList" style="margin-top:12px"></div>
+            </div>
+        </section>
     </main>
 
     <script src="/js/api.js"></script>
