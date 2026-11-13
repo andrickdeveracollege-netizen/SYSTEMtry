@@ -1,24 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>UST Angelicum College – Events</title>
-    <link rel="icon" type="image/png" href="/images/angelicum-logo.png" />
-    <link rel="stylesheet" href="/css/site.css?v=20261113" />
-    <link rel="stylesheet" href="/css/board.css?v=20261113" />
-    <style>
-        /* Home layout lives here too, so it still works if the browser holds an old board.css */
-        .home { display: grid; grid-template-columns: minmax(0, 75fr) minmax(260px, 25fr);
-                grid-template-areas: "board side" "cal cal"; gap: 18px; max-width: 1600px; margin: 22px auto; padding: 0 16px; align-items: start; }
-        .home .col-board { grid-area: board; min-width: 0; }
-        .home .side { grid-area: side; position: sticky; top: 16px; }
-        .home .col-cal { grid-area: cal; min-width: 0; }
-        @media (max-width: 1000px) {
-            .home { grid-template-columns: 1fr; grid-template-areas: "side" "board" "cal"; }
-            .home .side { position: static; }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UST Angelicum College – Events</title>
+  <link rel="icon" type="image/png" href="/images/angelicum-logo.png" />
+  <link rel="stylesheet" href="/css/site.css?v=20261113" />
+  <link rel="stylesheet" href="/css/board.css?v=20261113" />
+  <style>
+    /* Home layout: big bulletin board on the left, Welcome / Sign in on the right */
+    .home {
+      display: grid !important;
+      grid-template-columns: minmax(0, 80fr) minmax(280px, 20fr) !important;
+      grid-template-areas: "board side" "cal cal" !important;
+    }
+
+      .home .col-board {
+        grid-area: board !important;
+        order: 0 !important;
+        grid-column: auto !important;
+      }
+
+      .home .side {
+        grid-area: side !important;
+        order: 0 !important;
+      }
+      .home .col-cal {
+        grid-area: cal;
+        min-width: 0;
+      }
+      .home .side {
+        min-width: 0;
+      }
+
+        .home .side .who {
+          overflow-wrap: anywhere;
+          word-break: break-word;
         }
-    </style>
+
+        .home .side .btn {
+          white-space: normal;
+        }
+
+    @media (max-width: 1000px) {
+      .home {
+        grid-template-columns: 1fr;
+        grid-template-areas: "side" "board" "cal";
+      }
+
+        .home .side {
+          position: static;
+        }
+    }
+  </style>
 </head>
 <body>
     <header class="top">
