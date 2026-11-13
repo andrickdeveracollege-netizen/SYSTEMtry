@@ -1,14 +1,21 @@
 renderNav(document.getElementById('nav'));
 
-initCalendar({
-  grid: document.getElementById('cal'),
-  title: document.getElementById('monthTitle'),
-  filter: document.getElementById('facFilter'),
-  dayList: document.getElementById('dayList'),
-  prev: document.getElementById('prev'),
-  next: document.getElementById('next'),
-  today: document.getElementById('today')
-});
+// Signed-in users get the calendar on their dashboard, so the home page shows it to visitors only
+const signedInUser = !!(Auth.token && Auth.user);
+const calSection = document.querySelector('.col-cal');
+if (signedInUser) {
+  calSection.style.display = 'none';
+} else {
+  initCalendar({
+    grid: document.getElementById('cal'),
+    title: document.getElementById('monthTitle'),
+    filter: document.getElementById('facFilter'),
+    dayList: document.getElementById('dayList'),
+    prev: document.getElementById('prev'),
+    next: document.getElementById('next'),
+    today: document.getElementById('today')
+  });
+}
 
 // ---------- Sign-in box: signed in vs signed out ----------
 const authForm = document.getElementById('authForm');
@@ -18,7 +25,7 @@ const passwordInput = document.getElementById('password');
 const fullNameInput = document.getElementById('fullName');
 let mode = 'in';
 
-if (Auth.token && Auth.user) {
+if (signedInUser) {
   document.getElementById('signedOut').style.display = 'none';
   document.getElementById('signedIn').style.display = 'block';
   document.getElementById('who').textContent = Auth.user.fullName + ' · ' + Auth.user.email;
