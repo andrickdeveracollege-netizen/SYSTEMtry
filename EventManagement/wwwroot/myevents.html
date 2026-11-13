@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My Events – Event Management</title>
+    <link rel="icon" type="image/png" href="/images/angelicum-logo.png" />
+    <link rel="stylesheet" href="/css/site.css" />
+    <link rel="stylesheet" href="/css/board.css" />
+</head>
+<body>
+    <header class="top"><a class="brand" href="/index.html"><img class="brand-logo" src="/images/angelicum-logo.png" alt="UST Angelicum College logo" />UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
+    <main style="max-width:860px">
+        <h1>My Events</h1>
+        <div class="subtabs">
+            <a href="/myevents.html" class="active">My event requests</a>
+            <a href="/myregistrations.html">My registrations</a>
+        </div>
+        <div class="card">
+            <div class="row" style="justify-content:space-between;align-items:center">
+                <h2 style="margin:0">My event requests</h2>
+                <a class="btn gold" href="/request.html">Request an Event</a>
+            </div>
+            <div id="myEvents"><div class="spinner">Loading…</div></div>
+        </div>
+    </main>
+
+    <div class="modal" id="editModal">
+        <div class="card">
+            <h2>Edit pending request</h2>
+            <form id="editForm" novalidate>
+                <label for="editTitle">Title</label><input type="text" id="editTitle" maxlength="200" />
+                <label for="editPurpose">Purpose</label><textarea id="editPurpose" maxlength="2000"></textarea>
+                <label for="editCapacity">Number of attendees</label><input type="number" id="editCapacity" min="1" max="10000" />
+                <div class="msg" id="editMsg"></div>
+                <div style="margin-top:12px"><button class="btn" type="submit" id="editSave">Save</button> <button class="btn ghost" type="button" id="editCancel">Close</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="moveModal">
+        <div class="card">
+            <h2>Move event</h2>
+            <div class="hint-box">A new date has to be approved again by every office you asked.</div>
+            <form id="moveForm" novalidate>
+                <label for="moveStart">New start</label><input type="datetime-local" id="moveStart" />
+                <label for="moveEnd">New end</label><input type="datetime-local" id="moveEnd" />
+                <div class="msg" id="moveMsg"></div>
+                <div style="margin-top:12px"><button class="btn" type="submit" id="moveSave">Move event</button> <button class="btn ghost" type="button" id="moveCancel">Close</button></div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/myevents.js"></script>
+</body>
+</html>

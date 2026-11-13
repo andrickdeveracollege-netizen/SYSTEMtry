@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My Registrations – Event Management</title>
+    <link rel="icon" type="image/png" href="/images/angelicum-logo.png" />
+    <link rel="stylesheet" href="/css/site.css" />
+    <link rel="stylesheet" href="/css/board.css" />
+</head>
+<body>
+    <header class="top"><a class="brand" href="/index.html"><img class="brand-logo" src="/images/angelicum-logo.png" alt="UST Angelicum College logo" />UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
+    <main style="max-width:860px">
+        <h1>My Events</h1>
+        <div class="subtabs">
+            <a href="/myevents.html">My event requests</a>
+            <a href="/myregistrations.html" class="active">My registrations</a>
+        </div>
+        <div class="card">
+            <div class="row" style="justify-content:space-between;align-items:center">
+                <h2 style="margin:0">My registrations</h2>
+                <a class="btn" href="/register.html">Register for an Event</a>
+            </div>
+            <div id="myRegs"><div class="spinner">Loading…</div></div>
+        </div>
+    </main>
+
+    <script src="/js/api.js"></script>
+    <script src="/js/myregistrations.js"></script>
+</body>
+</html>

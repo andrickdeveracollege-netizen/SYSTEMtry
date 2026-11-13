@@ -127,7 +127,7 @@ function renderNav(el) {
   // Admins only manage events, so they get no Register / Request links
   const dashboard = u.isAdmin ? '' :
     `<div class="nav-dropdown"><a class="nav-dropdown-toggle" href="/dashboard.html">Dashboard ▾</a><div class="nav-dropdown-menu"><a href="/register.html">Register for an Event</a><a href="/request.html">Request an Event</a></div></div>`;
-  const myEvents = u.isAdmin ? '' : '<a href="/dashboard.html#my-events">My Events</a>';
+  const myEvents = u.isAdmin ? '' : '<a href="/myevents.html">My Events</a>';
   el.innerHTML = `<a href="/index.html">Bulletin</a>` + myEvents + dashboard +
     (u.isAdmin ? '<a href="/admin.html">Approvals</a>' : '') +
     (u.isSuperAdmin ? '<a href="/superadmin.html">Super admin</a>' : '') +
@@ -140,10 +140,9 @@ function renderNav(el) {
 }
 
 function markActive(el) {
+  // My Events and My Registrations are two pages of the same section
+  const path = location.pathname === '/myregistrations.html' ? '/myevents.html' : location.pathname;
   for (const a of el.querySelectorAll('a')) {
-    if (!a.href) continue;
-    const url = new URL(a.href);
-    // "My Events" (#my-events) and "Dashboard" share a page, so the hash decides which one is lit
-    if (url.pathname === location.pathname && url.hash === location.hash) a.classList.add('active');
+    if (a.href && new URL(a.href).pathname === path) a.classList.add('active');
   }
 }

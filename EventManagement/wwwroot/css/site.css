@@ -714,3 +714,8 @@ textarea {
 .fac-list label.too-small {
     opacity: .4;
 }
+
+/* tabs that join My event requests and My registrations */
+.subtabs { display: flex; gap: 8px; margin: 8px 0 16px; flex-wrap: wrap; }
+.subtabs a { padding: 8px 16px; border-radius: 999px; background: #fff; border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-weight: 600; }
+.subtabs a.active { background: var(--blue); border-color: var(--blue); color: #fff; }
