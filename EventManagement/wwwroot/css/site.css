@@ -719,3 +719,34 @@ textarea {
 .subtabs { display: flex; gap: 8px; margin: 8px 0 16px; flex-wrap: wrap; }
 .subtabs a { padding: 8px 16px; border-radius: 999px; background: #fff; border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-weight: 600; }
 .subtabs a.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+
+/* ---------- Phone: header and nav wrap instead of running off the screen ---------- */
+html, body { max-width: 100%; overflow-x: hidden; }
+img { max-width: 100%; }
+
+@media (max-width: 800px) {
+    header.top {
+        flex-wrap: wrap;
+        padding: 10px 14px;
+        gap: 8px 12px;
+    }
+
+    header.top .brand {
+        flex: 1 1 100%;
+        font-size: .95rem;
+        line-height: 1.25;
+    }
+
+    header.top .brand-logo { width: 36px; height: 36px; flex: none; }
+
+    header.top nav {
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        align-items: center;
+    }
+
+    header.top .nav-dropdown-menu { left: 0; right: auto; }
+    main { padding-left: 12px; padding-right: 12px; }
+    .card { padding: 14px; }
+}
