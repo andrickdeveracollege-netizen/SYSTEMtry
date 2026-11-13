@@ -65,18 +65,19 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const fmt = d => new Date(d).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
 const fmtTime = d => new Date(d).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 const pad = n => String(n).padStart(2, '0');
-// Date and time are separate boxes. The end date is hidden (same day as the start) until the
-// "Ends on a different date" box is ticked; the end TIME is always asked.
+// Date and time are separate boxes and the end date is always shown.
+// "Same date as the start" (ticked by default) locks the end date to the start date, so only the end TIME matters.
 const Range = {
   html(p, startLabel = 'Start', endLabel = 'End') {
+    const today = isoLocal(new Date()).slice(0, 10);
     return `
       <div class="range-row">
-        <div><label for="${p}StartDate">${startLabel} date</label><input type="date" id="${p}StartDate" /></div>
+        <div><label for="${p}StartDate">${startLabel} date</label><input type="date" id="${p}StartDate" min="${today}" /></div>
         <div><label for="${p}StartTime">${startLabel} time</label><input type="time" id="${p}StartTime" /></div>
       </div>
-      <label class="inline-check"><input type="checkbox" id="${p}Multi" /> Ends on a different date</label>
+      <label class="inline-check"><input type="checkbox" id="${p}Same" checked /> ${endLabel} date is the same as the start date</label>
       <div class="range-row">
-        <div id="${p}EndDateBox" style="display:none"><label for="${p}EndDate">${endLabel} date</label><input type="date" id="${p}EndDate" /></div>
+        <div><label for="${p}EndDate">${endLabel} date</label><input type="date" id="${p}EndDate" min="${today}" disabled /></div>
         <div><label for="${p}EndTime">${endLabel} time</label><input type="time" id="${p}EndTime" /></div>
       </div>`;
   },
@@ -85,15 +86,16 @@ const Range = {
     this.wire(p);
   },
   wire(p) {
-    const multi = document.getElementById(p + 'Multi');
-    const box = document.getElementById(p + 'EndDateBox');
+    const same = document.getElementById(p + 'Same');
+    const startDate = document.getElementById(p + 'StartDate');
     const endDate = document.getElementById(p + 'EndDate');
     const sync = () => {
-      box.style.display = multi.checked ? '' : 'none';
-      // when the end date shows up it starts on the start date, ready to be changed
-      if (multi.checked && !endDate.value) endDate.value = document.getElementById(p + 'StartDate').value;
+      endDate.disabled = same.checked;
+      if (same.checked) endDate.value = startDate.value;     // locked to the start date
     };
-    multi.onchange = sync;
+    same.onchange = sync;
+    startDate.oninput = sync;
+    startDate.onchange = sync;
     sync();
   },
   set(p, start, end) {
@@ -102,7 +104,7 @@ const Range = {
     document.getElementById(p + 'StartTime').value = isoLocal(s).slice(11, 16);
     document.getElementById(p + 'EndDate').value = isoLocal(e).slice(0, 10);
     document.getElementById(p + 'EndTime').value = isoLocal(e).slice(11, 16);
-    document.getElementById(p + 'Multi').checked = s.toDateString() !== e.toDateString();
+    document.getElementById(p + 'Same').checked = s.toDateString() === e.toDateString();
     this.wire(p);
   },
   // returns { start: Date, end: Date } or { error }
@@ -111,8 +113,7 @@ const Range = {
     if (!g('StartDate')) return { error: 'Please set the start date.' };
     if (!g('StartTime')) return { error: 'Please set the start time.' };
     if (!g('EndTime')) return { error: 'Please set the end time.' };
-    const multi = document.getElementById(p + 'Multi').checked;
-    const endDate = multi ? g('EndDate') : g('StartDate');
+    const endDate = document.getElementById(p + 'Same').checked ? g('StartDate') : g('EndDate');
     if (!endDate) return { error: 'Please set the end date.' };
     const start = new Date(g('StartDate') + 'T' + g('StartTime'));
     const end = new Date(endDate + 'T' + g('EndTime'));
