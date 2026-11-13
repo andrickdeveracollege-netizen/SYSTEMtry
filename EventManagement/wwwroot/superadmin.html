@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Super Admin – Event Management</title>
     <link rel="icon" type="image/png" href="/images/angelicum-logo.png" />
-    <link rel="stylesheet" href="/css/site.css?v=20261113" />
-    <link rel="stylesheet" href="/css/board.css?v=20261113" />
+    <link rel="stylesheet" href="/css/site.css?v=20261114" />
+    <link rel="stylesheet" href="/css/board.css?v=20261114" />
 </head>
 <body>
     <header class="top"><a class="brand" href="/index.html">UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
@@ -31,8 +31,7 @@
                 </div>
                 <label for="iDetail">Specific section / group <span class="muted">(optional)</span></label>
                 <input type="text" id="iDetail" maxlength="200" placeholder="e.g. Grade 7 only" />
-                <label for="iStart">Start</label><input type="datetime-local" id="iStart" />
-                <label for="iEnd">End</label><input type="datetime-local" id="iEnd" />
+                <div data-range="i"></div>
                 <label>Facilities</label>
                 <div id="iFacs"><div class="spinner">Loading…</div></div>
                 <div class="msg" id="iMsg"></div>
@@ -46,7 +45,7 @@
             <div id="users"><div class="spinner">Loading…</div></div>
         </div>
     </main>
-    <script src="/js/api.js?v=20261113"></script>
-    <script src="/js/superadmin.js?v=20261113"></script>
+    <script src="/js/api.js?v=20261114"></script>
+    <script src="/js/superadmin.js?v=20261114"></script>
 </body>
 </html>

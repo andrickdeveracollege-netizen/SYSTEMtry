@@ -16,7 +16,7 @@ public static class DepartmentRequestMapper
             d.EquipmentItems.Select(i => new AdminEquipmentLineDto(i.Equipment!.Name, i.Quantity, i.Notes)).ToList(),
             d.Status,
             d.EndorsementStoredName != null,
-            d.Department == DepartmentType.College,
+            true,   // the letter is optional for every office
             d.EndorsementOriginalName,
             d.RejectionReason,
             d.AdminNote,

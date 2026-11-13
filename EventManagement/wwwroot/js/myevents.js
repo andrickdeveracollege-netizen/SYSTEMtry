@@ -8,6 +8,7 @@ const editMsg = document.getElementById('editMsg');
 const moveModal = document.getElementById('moveModal');
 const moveForm = document.getElementById('moveForm');
 const moveMsg = document.getElementById('moveMsg');
+Range.mount('mv', 'New start', 'End');
 let mine = [];
 let editingId = null;
 let movingId = null;
@@ -88,8 +89,7 @@ editForm.addEventListener('submit', async e => {
 function openMove(id) {
   const d = mine.find(x => x.event.id === id);
   movingId = id;
-  document.getElementById('moveStart').value = isoLocal(new Date(d.event.startTime)).slice(0, 16);
-  document.getElementById('moveEnd').value = isoLocal(new Date(d.event.endTime)).slice(0, 16);
+  Range.set('mv', d.event.startTime, d.event.endTime);
   moveMsg.className = 'msg';
   moveModal.classList.add('open');
 }
@@ -97,15 +97,14 @@ document.getElementById('moveCancel').onclick = () => moveModal.classList.remove
 
 moveForm.addEventListener('submit', async e => {
   e.preventDefault();
-  const start = document.getElementById('moveStart').value;
-  const end = document.getElementById('moveEnd').value;
-  if (!start || !end) { showMsg(moveMsg, 'Please set the new start and end time.', false); return; }
-  if (new Date(end) <= new Date(start)) { showMsg(moveMsg, 'End time must be after the start time.', false); return; }
-  if (new Date(start) < new Date()) { showMsg(moveMsg, 'The new date must be in the future.', false); return; }
+  const range = Range.read('mv');
+  if (range.error) { showMsg(moveMsg, range.error, false); return; }
+  const start = range.start, end = range.end;
+  if (start < new Date()) { showMsg(moveMsg, 'The new date must be in the future.', false); return; }
   try {
     await withBusy(document.getElementById('moveSave'), () => api(`/api/events/${movingId}/reschedule`, {
       method: 'PUT',
-      body: { startTime: isoLocal(new Date(start)), endTime: isoLocal(new Date(end)) }
+      body: { startTime: isoLocal(start), endTime: isoLocal(end) }
     }));
     moveModal.classList.remove('open');
     toast('Event moved. The offices will review the new date.');

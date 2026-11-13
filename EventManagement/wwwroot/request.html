@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Request an Event</title>
     <link rel="icon" type="image/png" href="/images/angelicum-logo.png" />
-    <link rel="stylesheet" href="/css/site.css?v=20261113" />
-    <link rel="stylesheet" href="/css/board.css?v=20261113" />
+    <link rel="stylesheet" href="/css/site.css?v=20261114" />
+    <link rel="stylesheet" href="/css/board.css?v=20261114" />
 </head>
 <body>
     <header class="top"><a class="brand" href="/index.html"><img class="brand-logo" src="/images/angelicum-logo.png" alt="UST Angelicum College logo" />UST Angelicum College · Event Management</a><nav id="nav"></nav></header>
@@ -40,8 +40,7 @@
                 <div class="hint">Only facilities that can hold this many people are shown below.</div>
 
                 <label for="purpose">Purpose</label><textarea id="purpose" maxlength="2000"></textarea>
-                <label for="start">Start</label><input type="datetime-local" id="start" />
-                <label for="end">End</label><input type="datetime-local" id="end" />
+                <div data-range="r"></div>
                 <div class="hint" id="weekendHint" style="display:none">Outsiders can only book on Saturdays and Sundays.</div>
 
                 <h2 style="margin-top:26px">Which offices do you need?</h2>
@@ -53,7 +52,7 @@
             </form>
         </div>
     </main>
-    <script src="/js/api.js?v=20261113"></script>
-    <script src="/js/request.js?v=20261113"></script>
+    <script src="/js/api.js?v=20261114"></script>
+    <script src="/js/request.js?v=20261114"></script>
 </body>
 </html>

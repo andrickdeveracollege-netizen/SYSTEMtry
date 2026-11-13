@@ -8,15 +8,16 @@ const form = document.getElementById('form');
 const msg = document.getElementById('msg');
 const deptBox = document.getElementById('deptBox');
 const capacityInput = document.getElementById('capacity');
+Range.mount('r');
 const MAX_FILE = 5 * 1024 * 1024;
 const FILE_TYPES = ['.jpg', '.jpeg', '.png', '.pdf', '.docx'];
 
 const OFFICES = [
-  { key: 'Auxiliary', label: 'Auxiliary', letterOptional: false },
-  { key: 'ITMC', label: 'ITMC (Technical)', letterOptional: false },
+  { key: 'Auxiliary', label: 'Auxiliary', letterOptional: true },
+  { key: 'ITMC', label: 'ITMC (Technical)', letterOptional: true },
   { key: 'College', label: 'College (Ms. Judith)', letterOptional: true },
-  { key: 'TVET', label: 'TVET (Ms. Chavez)', letterOptional: false },
-  { key: 'Library', label: 'Library', letterOptional: false }
+  { key: 'TVET', label: 'TVET (Ms. Chavez)', letterOptional: true },
+  { key: 'Library', label: 'Library', letterOptional: true }
 ];
 
 // ---------- who is asking (role is never typed) ----------
@@ -69,7 +70,7 @@ function blockHtml(o, facilities, equipment) {
         </div>`).join('')}
 
       <label>Endorsement letter for ${esc(o.label)}
-        <span class="tag ${o.letterOptional ? 'approved' : 'pending'}">${o.letterOptional ? 'Optional' : 'Required'}</span></label>
+        <span class="tag approved">Optional</span></label>
       <input type="file" class="letter" accept=".jpg,.jpeg,.png,.pdf,.docx" />
       <div class="hint">Image (JPG/PNG), PDF or DOCX, max 5 MB.</div>
     </div>
@@ -133,9 +134,9 @@ function validate(selected) {
   const cap = Number(g('capacity'));
   if (!(cap >= 1 && cap <= 10000)) return 'Number of attendees must be between 1 and 10,000.';
   if (!g('purpose')) return 'Please enter the purpose.';
-  if (!g('start') || !g('end')) return 'Please set the start and end time.';
-  const start = new Date(g('start')), end = new Date(g('end'));
-  if (end <= start) return 'End time must be after the start time.';
+  const range = Range.read('r');
+  if (range.error) return range.error;
+  const { start, end } = range;
   if (start < new Date()) return 'The event must start in the future.';
   if (guest && !isWeekendRange(start, end)) return 'Outsiders can only book on Saturdays and Sundays.';
   if (selected.length === 0) return 'Tick at least one office you need.';
@@ -152,7 +153,6 @@ function validate(selected) {
         return `Please describe the 'Others' equipment for ${label}.`;
     }
     const file = block.querySelector('.letter').files[0];
-    if (!file && block.dataset.optional !== 'true') return `Please upload the endorsement letter for ${label}.`;
     if (file) {
       const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
       if (!FILE_TYPES.includes(ext)) return `The letter for ${label} must be JPG, PNG, PDF or DOCX.`;
@@ -172,8 +172,9 @@ function buildFormData(selected) {
   if (g('audienceDetail')) fd.append('AudienceDetail', g('audienceDetail'));
   fd.append('Capacity', g('capacity'));
   fd.append('Purpose', g('purpose'));
-  fd.append('StartTime', isoLocal(new Date(g('start'))));
-  fd.append('EndTime', isoLocal(new Date(g('end'))));
+  const range = Range.read('r');
+  fd.append('StartTime', isoLocal(range.start));
+  fd.append('EndTime', isoLocal(range.end));
   if (guest) {
     fd.append('GuestEmail', g('guestEmail'));
     if (g('phone')) fd.append('Phone', g('phone'));

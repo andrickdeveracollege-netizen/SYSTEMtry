@@ -28,8 +28,7 @@ function renderManage(d) {
       ${x.note ? '<div class="hint-box" style="margin:4px 0"><b>Note from ' + esc(x.office) + ':</b> ' + esc(x.note) + '</div>' : ''}`).join('')}
     ${open ? `
     <hr style="border:0;border-top:1px solid var(--line);margin:12px 0" />
-    <label for="gStart">Move to (weekend only)</label><input type="datetime-local" id="gStart" />
-    <label for="gEnd">Until</label><input type="datetime-local" id="gEnd" />
+    ${Range.html('g', 'Move to (weekend only)', 'End')}
     <div class="msg" id="gMsg"></div>
     <div class="row">
       <button class="btn ghost" id="gMove" type="button">Move event</button>
@@ -39,13 +38,14 @@ function renderManage(d) {
 
   if (!open) return;
   const gMsg = document.getElementById('gMsg');
+  Range.wire('g');
   document.getElementById('gMove').onclick = async ev => {
-    const start = document.getElementById('gStart').value, end = document.getElementById('gEnd').value;
-    if (!start || !end) { showMsg(gMsg, 'Please set the new start and end time.', false); return; }
-    if (new Date(end) <= new Date(start)) { showMsg(gMsg, 'End time must be after the start time.', false); return; }
+    const range = Range.read('g');
+    if (range.error) { showMsg(gMsg, range.error, false); return; }
+    const { start, end } = range;
     try {
       const r = await withBusy(ev.target, () => api(`/api/guest/events/${current.id}/reschedule?${query()}`, {
-        method: 'PUT', body: { startTime: isoLocal(new Date(start)), endTime: isoLocal(new Date(end)) }
+        method: 'PUT', body: { startTime: isoLocal(start), endTime: isoLocal(end) }
       }));
       toast('Event moved. The offices will review the new date.');
       renderManage(r);

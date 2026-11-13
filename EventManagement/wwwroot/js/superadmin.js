@@ -2,6 +2,7 @@ if (!Auth.require(true) || !Auth.user.isSuperAdmin) { location.href = '/index.ht
 renderNav(document.getElementById('nav'));
 
 const OFFICE_LABEL = { Auxiliary: 'Auxiliary', ITMC: 'ITMC', College: 'College', TVET: 'TVET', Library: 'Library' };
+Range.mount('i');
 const instForm = document.getElementById('instForm');
 const iMsg = document.getElementById('iMsg');
 const usersBox = document.getElementById('users');
@@ -24,15 +25,15 @@ instForm.addEventListener('submit', async e => {
   const aud = [...document.querySelectorAll('.iaud:checked')].reduce((s, c) => s + Number(c.value), 0);
   if (!g('iTitle') || !g('iOrg') || !g('iPurpose')) { showMsg(iMsg, 'Please fill in the title, organization and purpose.', false); return; }
   if (!aud) { showMsg(iMsg, 'Select at least one audience.', false); return; }
-  if (!g('iStart') || !g('iEnd')) { showMsg(iMsg, 'Please set the start and end time.', false); return; }
-  if (new Date(g('iEnd')) <= new Date(g('iStart'))) { showMsg(iMsg, 'End time must be after the start time.', false); return; }
+  const range = Range.read('i');
+  if (range.error) { showMsg(iMsg, range.error, false); return; }
   if (!facs.length) { showMsg(iMsg, 'Pick at least one facility.', false); return; }
   try {
     await withBusy(document.getElementById('iBtn'), () => api('/api/superadmin/events', {
       method: 'POST',
       body: {
         title: g('iTitle'), organization: g('iOrg'), purpose: g('iPurpose'), targetAudience: aud, audienceDetail: g('iDetail') || null,
-        startTime: isoLocal(new Date(g('iStart'))), endTime: isoLocal(new Date(g('iEnd'))), facilityIds: facs
+        startTime: isoLocal(range.start), endTime: isoLocal(range.end), facilityIds: facs
       }
     }));
     showMsg(iMsg, 'School event posted. It is on the bulletin now.', true);

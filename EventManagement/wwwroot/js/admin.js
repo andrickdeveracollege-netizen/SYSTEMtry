@@ -25,7 +25,7 @@ function requestCard(r) {
     : '—';
   const letter = r.hasEndorsement
     ? `<button class="btn ghost" data-letter="${r.id}" type="button">View letter${r.endorsementFileName ? ' (' + esc(r.endorsementFileName) + ')' : ''}</button>`
-    : `<span class="muted">${r.endorsementOptional ? 'No letter (optional for this office)' : 'No letter uploaded'}</span>`;
+    : `<span class="muted">${r.endorsementOptional ? 'No letter attached' : 'No letter attached'}</span>`;
   const actions = r.status === 'Pending'
     ? `<button class="btn ok" data-approve="${r.id}" type="button">Approve</button>
        <button class="btn bad" data-reject="${r.id}" type="button">Reject</button>` : '';
