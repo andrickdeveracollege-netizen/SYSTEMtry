@@ -65,6 +65,58 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const fmt = d => new Date(d).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
 const fmtTime = d => new Date(d).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 const pad = n => String(n).padStart(2, '0');
+// Start date+time, then a "same day" tick: ticked = only an end TIME is asked (end date = start date),
+// unticked = a full end date+time (multi-day event).
+const Range = {
+  html(p, startLabel = 'Start', endLabel = 'End') {
+    return `
+      <label for="${p}Start">${startLabel}</label><input type="datetime-local" id="${p}Start" />
+      <label class="inline-check"><input type="checkbox" id="${p}Same" checked /> Ends the same day</label>
+      <div id="${p}TimeRow"><label for="${p}EndTime">${endLabel} time</label><input type="time" id="${p}EndTime" /></div>
+      <div id="${p}DateRow" style="display:none"><label for="${p}End">${endLabel} date and time</label><input type="datetime-local" id="${p}End" /></div>`;
+  },
+  mount(p, startLabel, endLabel) {
+    document.querySelector(`[data-range="${p}"]`).innerHTML = this.html(p, startLabel, endLabel);
+    this.wire(p);
+  },
+  wire(p) {
+    const same = document.getElementById(p + 'Same');
+    const sync = () => {
+      document.getElementById(p + 'TimeRow').style.display = same.checked ? '' : 'none';
+      document.getElementById(p + 'DateRow').style.display = same.checked ? 'none' : '';
+    };
+    same.onchange = sync;
+    sync();
+  },
+  set(p, start, end) {
+    const s = new Date(start), e = new Date(end);
+    document.getElementById(p + 'Start').value = isoLocal(s).slice(0, 16);
+    const sameDay = s.toDateString() === e.toDateString();
+    document.getElementById(p + 'Same').checked = sameDay;
+    document.getElementById(p + 'EndTime').value = isoLocal(e).slice(11, 16);
+    document.getElementById(p + 'End').value = isoLocal(e).slice(0, 16);
+    this.wire(p);
+  },
+  // returns { start: Date, end: Date } or { error }
+  read(p) {
+    const startV = document.getElementById(p + 'Start').value;
+    if (!startV) return { error: 'Please set the start date and time.' };
+    const same = document.getElementById(p + 'Same').checked;
+    let endV;
+    if (same) {
+      const t = document.getElementById(p + 'EndTime').value;
+      if (!t) return { error: 'Please set the end time.' };
+      endV = startV.slice(0, 10) + 'T' + t;
+    } else {
+      endV = document.getElementById(p + 'End').value;
+      if (!endV) return { error: 'Please set the end date and time.' };
+    }
+    const start = new Date(startV), end = new Date(endV);
+    if (end <= start) return { error: 'The end must be after the start.' };
+    return { start, end };
+  }
+};
+
 const isoLocal = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
 const statusTag = s => `<span class="tag ${String(s).toLowerCase()}">${esc(s)}</span>`;
 const placesOf = e => e.facilityNames.length ? e.facilityNames.join(', ') : 'Equipment only';

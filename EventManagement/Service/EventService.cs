@@ -131,11 +131,8 @@ public class EventService : IEventService
             if (dr.Facilities.Count == 0 && dr.EquipmentItems.Count == 0)
                 throw new ServiceException($"Pick at least one facility or equipment for {office}, or untick it.");
 
-            // Each department has its own letter. Optional only for College.
-            bool hasFile = input.Endorsement is { Length: > 0 };
-            if (!hasFile && input.Department != DepartmentType.College)
-                throw new ServiceException($"An endorsement letter (image, PDF or DOCX) is required for {office}.");
-            if (hasFile) ValidateFile(input.Endorsement!, office);
+            // Each department can get its own letter, but it is optional for every office.
+            if (input.Endorsement is { Length: > 0 }) ValidateFile(input.Endorsement, office);
 
             requests.Add((input, dr));
         }
