@@ -752,3 +752,10 @@ img { max-width: 100%; }
 }
 
 .inline-check { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font-weight: 600; cursor: pointer; }
+
+/* date and time sit side by side */
+.range-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.range-row > div { min-width: 0; }
+.range-row > div[style*="display:none"] + div { grid-column: 1 / -1; }
+@media (max-width: 480px) { .range-row { grid-template-columns: 1fr; } }
+.range-row input[type=date], .range-row input[type=time] { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #cfd6e4; border-radius: 8px; font: inherit; background: #fff; }

@@ -65,53 +65,57 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const fmt = d => new Date(d).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
 const fmtTime = d => new Date(d).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 const pad = n => String(n).padStart(2, '0');
-// Start date+time, then a "same day" tick: ticked = only an end TIME is asked (end date = start date),
-// unticked = a full end date+time (multi-day event).
+// Date and time are separate boxes. The end date is hidden (same day as the start) until the
+// "Ends on a different date" box is ticked; the end TIME is always asked.
 const Range = {
   html(p, startLabel = 'Start', endLabel = 'End') {
     return `
-      <label for="${p}Start">${startLabel}</label><input type="datetime-local" id="${p}Start" />
-      <label class="inline-check"><input type="checkbox" id="${p}Same" checked /> Ends the same day</label>
-      <div id="${p}TimeRow"><label for="${p}EndTime">${endLabel} time</label><input type="time" id="${p}EndTime" /></div>
-      <div id="${p}DateRow" style="display:none"><label for="${p}End">${endLabel} date and time</label><input type="datetime-local" id="${p}End" /></div>`;
+      <div class="range-row">
+        <div><label for="${p}StartDate">${startLabel} date</label><input type="date" id="${p}StartDate" /></div>
+        <div><label for="${p}StartTime">${startLabel} time</label><input type="time" id="${p}StartTime" /></div>
+      </div>
+      <label class="inline-check"><input type="checkbox" id="${p}Multi" /> Ends on a different date</label>
+      <div class="range-row">
+        <div id="${p}EndDateBox" style="display:none"><label for="${p}EndDate">${endLabel} date</label><input type="date" id="${p}EndDate" /></div>
+        <div><label for="${p}EndTime">${endLabel} time</label><input type="time" id="${p}EndTime" /></div>
+      </div>`;
   },
   mount(p, startLabel, endLabel) {
     document.querySelector(`[data-range="${p}"]`).innerHTML = this.html(p, startLabel, endLabel);
     this.wire(p);
   },
   wire(p) {
-    const same = document.getElementById(p + 'Same');
+    const multi = document.getElementById(p + 'Multi');
+    const box = document.getElementById(p + 'EndDateBox');
+    const endDate = document.getElementById(p + 'EndDate');
     const sync = () => {
-      document.getElementById(p + 'TimeRow').style.display = same.checked ? '' : 'none';
-      document.getElementById(p + 'DateRow').style.display = same.checked ? 'none' : '';
+      box.style.display = multi.checked ? '' : 'none';
+      // when the end date shows up it starts on the start date, ready to be changed
+      if (multi.checked && !endDate.value) endDate.value = document.getElementById(p + 'StartDate').value;
     };
-    same.onchange = sync;
+    multi.onchange = sync;
     sync();
   },
   set(p, start, end) {
     const s = new Date(start), e = new Date(end);
-    document.getElementById(p + 'Start').value = isoLocal(s).slice(0, 16);
-    const sameDay = s.toDateString() === e.toDateString();
-    document.getElementById(p + 'Same').checked = sameDay;
+    document.getElementById(p + 'StartDate').value = isoLocal(s).slice(0, 10);
+    document.getElementById(p + 'StartTime').value = isoLocal(s).slice(11, 16);
+    document.getElementById(p + 'EndDate').value = isoLocal(e).slice(0, 10);
     document.getElementById(p + 'EndTime').value = isoLocal(e).slice(11, 16);
-    document.getElementById(p + 'End').value = isoLocal(e).slice(0, 16);
+    document.getElementById(p + 'Multi').checked = s.toDateString() !== e.toDateString();
     this.wire(p);
   },
   // returns { start: Date, end: Date } or { error }
   read(p) {
-    const startV = document.getElementById(p + 'Start').value;
-    if (!startV) return { error: 'Please set the start date and time.' };
-    const same = document.getElementById(p + 'Same').checked;
-    let endV;
-    if (same) {
-      const t = document.getElementById(p + 'EndTime').value;
-      if (!t) return { error: 'Please set the end time.' };
-      endV = startV.slice(0, 10) + 'T' + t;
-    } else {
-      endV = document.getElementById(p + 'End').value;
-      if (!endV) return { error: 'Please set the end date and time.' };
-    }
-    const start = new Date(startV), end = new Date(endV);
+    const g = id => document.getElementById(p + id).value;
+    if (!g('StartDate')) return { error: 'Please set the start date.' };
+    if (!g('StartTime')) return { error: 'Please set the start time.' };
+    if (!g('EndTime')) return { error: 'Please set the end time.' };
+    const multi = document.getElementById(p + 'Multi').checked;
+    const endDate = multi ? g('EndDate') : g('StartDate');
+    if (!endDate) return { error: 'Please set the end date.' };
+    const start = new Date(g('StartDate') + 'T' + g('StartTime'));
+    const end = new Date(endDate + 'T' + g('EndTime'));
     if (end <= start) return { error: 'The end must be after the start.' };
     return { start, end };
   }
