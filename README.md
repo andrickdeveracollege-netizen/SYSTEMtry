@@ -3,6 +3,15 @@
 Role-secured REST Web API (ASP.NET Core 8, EF Core, SQL Server, JWT) with a plain HTML/CSS/JavaScript client.
 Domain: **Event Ticketing & Registration** (facility booking + registration with a capacity cap).
 
+## Team
+| Member | Role in the group |
+|---|---|
+| Andrick Steven De Vera | see `CONTRIBUTIONS.md` |
+| Jacob Marquiz Cagang | see `CONTRIBUTIONS.md` |
+| John Benedict Estimada | see `CONTRIBUTIONS.md` |
+
+Course: Integrative Programming and Technologies (IPT) · UST Angelicum College
+
 ## What it does
 - Landing page: bulletin board (cork board) with approved upcoming events, and a facility calendar for visitors
 - Sign in with an Angelicum account (`@ustangelicum.edu.ph`), or continue as a visitor (outsider) with just an email

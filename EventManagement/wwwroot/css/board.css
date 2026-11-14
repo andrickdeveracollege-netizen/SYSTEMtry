@@ -74,23 +74,23 @@
     color: var(--muted);
 }
 
-/* ---------- Cork board (uses /img/corkboard.png as the frame) ---------- */
+/* ---------- Cork board (uses /img/bulletin.jpg as the frame; the BULLETIN sign sits at the top) ---------- */
 .cork {
     --u: 1cqw;
     container-type: inline-size;
     position: relative;
     width: 100%;
-    aspect-ratio: 691 / 388;
-    background: url('/img/corkboard.png') 0 0 / 100% 100% no-repeat, #c8975a;
+    aspect-ratio: 16 / 9;
+    background: url('/img/bulletin.jpg') 0 0 / 100% 100% no-repeat, #c8975a;
     filter: drop-shadow(0 8px 14px rgba(0,0,0,.3));
 }
 
 .cork-inner {
     position: absolute;
-    top: 8%;
-    bottom: 9%;
-    left: 17%;
-    right: 17%;
+    top: 23.5%;    /* leaves room for the BULLETIN sign */
+    bottom: 7%;
+    left: 11%;     /* and for the paper decorations in the corners */
+    right: 11%;
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
@@ -119,10 +119,10 @@
     overflow: hidden;
     background: var(--bg);
     color: #2b2b2b;
-    padding: calc(var(--u) * 2.4) calc(var(--u) * 1.6) calc(var(--u) * 1.2);
+    padding: calc(var(--u) * 1.8) calc(var(--u) * 1.4) calc(var(--u) * .8);
     box-shadow: 2px 5px 9px rgba(0,0,0,.32);
     font-family: 'Segoe Print','Bradley Hand','Comic Sans MS',cursive;
-    font-size: calc(var(--u) * 1.7);
+    font-size: calc(var(--u) * 1.4);
     line-height: 1.25;
     transform: rotate(var(--rot, 0deg));
     transition: transform .18s ease, box-shadow .18s ease;
@@ -141,9 +141,9 @@
 
     .note.poster {
         background: #fffef8;
-        border-top: calc(var(--u) * 2.2) solid var(--c);
+        border-top: calc(var(--u) * 1.3) solid var(--c);
         font-family: 'Segoe UI',Roboto,Arial,sans-serif;
-        padding-top: calc(var(--u) * 1.2);
+        padding-top: calc(var(--u) * .8);
     }
 
 .pin {
@@ -179,17 +179,17 @@
 
     .note .day b {
         display: block;
-        font-size: calc(var(--u) * 2.6);
+        font-size: calc(var(--u) * 2.2);
     }
 
     .note .day small {
-        font-size: calc(var(--u) * 1.2);
+        font-size: calc(var(--u) * 1.05);
         text-transform: uppercase;
     }
 
 .note h3 {
     margin: calc(var(--u) * .5) 0 calc(var(--u) * .2);
-    font-size: calc(var(--u) * 2);
+    font-size: calc(var(--u) * 1.7);
     line-height: 1.15;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -200,7 +200,7 @@
 .note .org,
 .note .where,
 .note .seats {
-    font-size: calc(var(--u) * 1.45);
+    font-size: calc(var(--u) * 1.2);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -209,11 +209,11 @@
 .note .where { font-weight: 700; }
 
 .note .go {
-    margin-top: calc(var(--u) * .6);
+    margin-top: calc(var(--u) * .3);
 }
 
     .note .go .btn {
-        padding: calc(var(--u) * .5) calc(var(--u) * 1.4);
+        padding: calc(var(--u) * .35) calc(var(--u) * 1.2);
         font-size: calc(var(--u) * 1.4);
         background: var(--c);
         color: #fff;
