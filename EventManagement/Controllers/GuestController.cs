@@ -27,7 +27,7 @@ public class GuestController : ControllerBase
     public async Task<IActionResult> Request([FromForm] GuestEventRequestDto dto)
     {
         var who = new Requester(dto.GuestEmail, RequesterRole.Guest, IsGuest: true, dto.Phone);
-        return Ok(await _events.CreateRequestAsync(dto, who));
+        return StatusCode(StatusCodes.Status201Created, await _events.CreateRequestAsync(dto, who));
     }
 
     // Manage with the email + code that was shown after submitting
@@ -61,6 +61,6 @@ public class GuestController : ControllerBase
     public async Task<IActionResult> Register(RegistrationDto dto)
     {
         await _registrations.RegisterGuestAsync(dto);
-        return Ok(new { message = "You are registered. See you at the event!" });
+        return StatusCode(StatusCodes.Status201Created, new { message = "You are registered. See you at the event!" });
     }
 }

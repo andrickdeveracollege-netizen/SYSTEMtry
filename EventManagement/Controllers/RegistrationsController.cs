@@ -22,7 +22,7 @@ public class RegistrationsController : ControllerBase
         User.EnsureNotAdmin("register for events");
         var who = new Registrant(User.Email(), User.FullName(), User.Position(), User.Level());
         await _service.RegisterMemberAsync(dto.EventId, dto.Confirmed, who);
-        return Ok(new { message = "You are registered. See you at the event!" });
+        return StatusCode(StatusCodes.Status201Created, new { message = "You are registered. See you at the event!" });
     }
 
     [HttpPost("{id:int}/cancel")]
