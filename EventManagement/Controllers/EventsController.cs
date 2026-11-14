@@ -27,6 +27,21 @@ public class EventsController : ControllerBase
     [Authorize]
     public async Task<IActionResult> Mine() => Ok(await _events.GetMineAsync(User.Email()));
 
+    // Who registered. Requester and the offices only.
+    [HttpGet("{id:int}/registrations")]
+    [Authorize]
+    public async Task<IActionResult> Registrants(int id) =>
+        Ok(await _events.GetRegistrantsAsync(id, User.Email(), User.IsAnyAdmin(), User.Dept()));
+
+    [HttpGet("{id:int}/registrations/export")]
+    [Authorize]
+    public async Task<IActionResult> ExportRegistrants(int id)
+    {
+        var list = await _events.GetRegistrantsAsync(id, User.Email(), User.IsAnyAdmin(), User.Dept());
+        var (bytes, name) = RegistrantExporter.ToExcel(list);
+        return File(bytes, RegistrantExporter.ContentType, name);
+    }
+
     [HttpGet("{id:int}")]
     [Authorize]
     public async Task<IActionResult> Detail(int id) => Ok(await _events.GetDetailAsync(id));

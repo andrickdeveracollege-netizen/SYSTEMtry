@@ -352,6 +352,40 @@ public class EventService : IEventService
         await _deptRequests.SaveAsync();
     }
 
+    public async Task<RegistrantListDto> GetRegistrantsAsync(int id, string email, bool isAdmin, DepartmentType? dept)
+    {
+        var ev = await _events.GetDetailAsync(id) ?? throw new ServiceException("Event not found.", 404);
+        bool owner = string.Equals(ev.RequesterEmail, email, StringComparison.OrdinalIgnoreCase);
+        bool office = isAdmin && (dept == null || ev.DepartmentRequests.Any(d => d.Department == dept));
+        if (!owner && !office)
+            throw new ServiceException("Only the person who requested this event can see who registered.", 403);
+        return ToRegistrantList(ev);
+    }
+
+    public async Task<RegistrantListDto> GetGuestRegistrantsAsync(int id, string email, string code)
+    {
+        await LoadGuestAsync(id, email, code);
+        var ev = await _events.GetDetailAsync(id) ?? throw new ServiceException("Event not found.", 404);
+        return ToRegistrantList(ev);
+    }
+
+    private static RegistrantListDto ToRegistrantList(CampusEvent ev)
+    {
+        var rows = ev.Registrations
+            .Where(r => !r.Cancelled)
+            .OrderBy(r => r.RegisteredAt)
+            .Select(r => new RegistrantRowDto(r.FullName, r.Email, LevelText(r.YearLevel), r.Confirmed, r.RegisteredAt))
+            .ToList();
+        return new RegistrantListDto(ev.Id, ev.Title, ev.StartTime, ev.Capacity, rows);
+    }
+
+    private static string LevelText(YearLevel level) => level switch
+    {
+        YearLevel.None => "Faculty / staff",
+        YearLevel.Outsider => "Outsider",
+        _ => level.ToString()
+    };
+
     // A note can be added or changed at any time: pending, approved, rejected, even after the event is cancelled.
     public async Task SetNoteAsync(int id, DepartmentType? dept, string note)
     {

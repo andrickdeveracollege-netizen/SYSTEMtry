@@ -61,6 +61,55 @@ async function openEndorsement(id) {
   }
 }
 
+// Download a file (the Excel export). Sends the token when signed in, nothing for guests.
+async function downloadFile(url) {
+  const headers = Auth.token ? { Authorization: 'Bearer ' + Auth.token } : {};
+  const res = await fetch(url, { headers });
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error((data && data.message) || 'Could not download the file (' + res.status + ').');
+  }
+  const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(res.headers.get('Content-Disposition') || '');
+  const name = m ? decodeURIComponent(m[1]) : 'registrants.xlsx';
+  const blobUrl = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = blobUrl; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 4000);
+}
+
+// Pop-up with everyone who registered. listUrl returns the list, exportUrl returns the .xlsx
+async function openRegistrants(listUrl, exportUrl) {
+  document.getElementById('regModal')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal open';
+  modal.id = 'regModal';
+  modal.innerHTML = '<div class="card" style="max-width:820px;width:100%"><div class="spinner">Loading…</div></div>';
+  document.body.appendChild(modal);
+  const close = () => modal.remove();
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  try {
+    const d = await api(listUrl);
+    const rows = d.rows.map((r, i) => `<tr><td>${i + 1}</td><td>${esc(r.fullName)}</td><td>${esc(r.email)}</td><td>${esc(r.level)}</td><td>${r.confirmed ? 'Yes' : 'No'}</td><td>${fmt(r.registeredAt)}</td></tr>`).join('');
+    modal.querySelector('.card').innerHTML = `
+      <h2 style="margin-top:0">Registered: ${esc(d.title)}</h2>
+      <p class="muted">${fmt(d.startTime)} · <b>${d.rows.length}</b> of ${d.capacity} registered</p>
+      <div style="overflow-x:auto;max-height:55vh;overflow-y:auto">
+        ${d.rows.length ? `<table class="table"><thead><tr><th>#</th><th>Name</th><th>Email</th><th>Level</th><th>Confirmed</th><th>Registered on</th></tr></thead><tbody>${rows}</tbody></table>`
+          : '<div class="empty-state">Nobody has registered yet.</div>'}
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn" id="regExport" type="button"${d.rows.length ? '' : ' disabled'}>Export to Excel</button>
+        <button class="btn ghost" id="regClose" type="button">Close</button>
+      </div>`;
+    modal.querySelector('#regClose').onclick = close;
+    modal.querySelector('#regExport').onclick = e => withBusy(e.target, () => downloadFile(exportUrl)).catch(err => toast(err.message, false));
+  } catch (err) {
+    modal.querySelector('.card').innerHTML = `<div class="empty-state">${esc(err.message)}</div><div class="row"><button class="btn ghost" id="regClose" type="button">Close</button></div>`;
+    modal.querySelector('#regClose').onclick = close;
+  }
+}
+
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmt = d => new Date(d).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
 const fmtTime = d => new Date(d).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });

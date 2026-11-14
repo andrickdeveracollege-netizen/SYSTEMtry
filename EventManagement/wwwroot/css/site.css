@@ -759,3 +759,8 @@ img { max-width: 100%; }
 .range-row > div[style*="display:none"] + div { grid-column: 1 / -1; }
 @media (max-width: 480px) { .range-row { grid-template-columns: 1fr; } }
 .range-row input[type=date], .range-row input[type=time] { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #cfd6e4; border-radius: 8px; font: inherit; background: #fff; }
+
+/* registrants list */
+.table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.table th, .table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.table thead th { position: sticky; top: 0; background: #eef2fb; }

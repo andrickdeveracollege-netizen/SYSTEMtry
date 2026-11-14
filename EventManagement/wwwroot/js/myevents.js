@@ -29,6 +29,7 @@ function eventRow(d) {
     <div class="muted">${esc(placesOf(e))}</div>
     ${offices}
     <div class="row">
+      ${e.requiresRegistration && e.status !== 'Rejected' ? `<button class="btn" data-regs="${e.id}" type="button">Registered (${e.registered})</button>` : ''}
       ${e.status === 'Pending' ? `<button class="btn ghost" data-edit="${e.id}" type="button">Edit</button>` : ''}
       ${open ? `<button class="btn ghost" data-move="${e.id}" type="button">Move</button>` : ''}
       ${open ? `<button class="btn bad" data-cancel="${e.id}" type="button">Cancel event</button>` : ''}
@@ -46,7 +47,8 @@ async function loadMyEvents() {
 }
 
 myEvents.addEventListener('click', async ev => {
-  const { edit, move, cancel } = ev.target.dataset;
+  const { edit, move, cancel, regs } = ev.target.dataset;
+  if (regs) { openRegistrants(`/api/events/${regs}/registrations`, `/api/events/${regs}/registrations/export`); return; }
   if (edit) openEdit(Number(edit));
   if (move) openMove(Number(move));
   if (cancel && confirm('Cancel this event? Its booked slots will be released.')) {

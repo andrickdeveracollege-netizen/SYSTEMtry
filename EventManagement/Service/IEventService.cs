@@ -30,6 +30,9 @@ public interface IEventService
     Task<List<AdminRequestDto>> GetRequestsForAdminAsync(DepartmentType dept, EventStatus status);
     Task ApproveAsync(int departmentRequestId, DepartmentType? dept, string adminEmail);
     Task RejectAsync(int departmentRequestId, DepartmentType? dept, string adminEmail, string reason);
+    // Who registered: the requester, or an admin whose office is part of the event (dept null = super admin)
+    Task<RegistrantListDto> GetRegistrantsAsync(int eventId, string email, bool isAdmin, DepartmentType? dept);
+    Task<RegistrantListDto> GetGuestRegistrantsAsync(int eventId, string email, string code);
     Task SetNoteAsync(int departmentRequestId, DepartmentType? dept, string note);
     Task AdminCancelEventAsync(int eventId, DepartmentType? dept);
     Task<(string PhysicalPath, string ContentType, string DownloadName)> GetEndorsementAsync(int departmentRequestId, DepartmentType? dept);

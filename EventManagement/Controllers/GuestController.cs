@@ -35,6 +35,17 @@ public class GuestController : ControllerBase
     public async Task<IActionResult> Get(int id, [FromQuery] string email, [FromQuery] string code)
         => Ok(await _events.GetGuestEventAsync(id, email, code));
 
+    [HttpGet("events/{id:int}/registrations")]
+    public async Task<IActionResult> Registrants(int id, [FromQuery] string email, [FromQuery] string code)
+        => Ok(await _events.GetGuestRegistrantsAsync(id, email, code));
+
+    [HttpGet("events/{id:int}/registrations/export")]
+    public async Task<IActionResult> ExportRegistrants(int id, [FromQuery] string email, [FromQuery] string code)
+    {
+        var (bytes, name) = RegistrantExporter.ToExcel(await _events.GetGuestRegistrantsAsync(id, email, code));
+        return File(bytes, RegistrantExporter.ContentType, name);
+    }
+
     [HttpPut("events/{id:int}/reschedule")]
     public async Task<IActionResult> Reschedule(int id, RescheduleDto dto, [FromQuery] string email, [FromQuery] string code)
         => Ok(await _events.RescheduleGuestAsync(id, dto, email, code));

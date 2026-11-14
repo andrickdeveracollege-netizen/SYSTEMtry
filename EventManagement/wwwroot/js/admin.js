@@ -41,7 +41,8 @@ function requestCard(r) {
     ${r.rejectionReason ? `<div><b>Reason:</b> ${esc(r.rejectionReason)}</div>` : ''}
     <label for="note-${r.id}">Note for the requester (any status)</label>
     <textarea id="note-${r.id}" maxlength="1000" rows="2" placeholder="e.g. Please bring your own extension cord.">${esc(r.note || '')}</textarea>
-    <div class="row">${letter}${actions}${cancel}<button class="btn ghost" data-note="${r.id}" type="button">Save note</button></div>
+    <div class="row">${letter}${actions}${cancel}<button class="btn ghost" data-note="${r.id}" type="button">Save note</button>
+      <button class="btn ghost" data-regs="${r.eventId}" type="button">Who registered</button></div>
   </div>`;
 }
 
@@ -85,7 +86,8 @@ document.getElementById('tabs').addEventListener('click', e => {
 });
 
 list.addEventListener('click', async e => {
-  const { approve, reject, letter, cancel, note } = e.target.dataset;
+  const { approve, reject, letter, cancel, note, regs } = e.target.dataset;
+  if (regs) { openRegistrants(`/api/events/${regs}/registrations`, `/api/events/${regs}/registrations/export`); return; }
   if (letter) { openEndorsement(letter); return; }
   if (note) {
     try {

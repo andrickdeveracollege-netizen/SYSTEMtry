@@ -72,6 +72,8 @@ Seed data: facilities (capacities are placeholders, edit in AppDBContext), equip
 | POST | /api/admin/requests/{id}/approve, /reject | Admin (own office) |
 | GET | /api/admin/reports/events | Admin – registrations vs capacity per event |
 | DELETE | /api/admin/events/{id} | Admin – cancel an event |
+| GET | /api/events/{id}/registrations (and /export for .xlsx) | Requester or office admin – who registered |
+| GET | /api/guest/events/{id}/registrations (and /export)?email=&code= | Guest requester |
 | POST | /api/guest/events/request, /api/guest/registrations | guest (email) |
 | GET/PUT/DELETE | /api/guest/events/{id}?email=&code= | guest (manage code) |
 | GET/POST/PUT | /api/superadmin/users, /users/{id}/reset-password, /users/{id}/position, /events | Super admin |

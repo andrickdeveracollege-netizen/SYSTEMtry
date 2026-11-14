@@ -31,6 +31,7 @@ function renderManage(d) {
     ${Range.html('g', 'Move to (weekend only)', 'End')}
     <div class="msg" id="gMsg"></div>
     <div class="row">
+      <button class="btn" id="gRegs" type="button">Registered (${e.registered})</button>
       <button class="btn ghost" id="gMove" type="button">Move event</button>
       <button class="btn bad" id="gCancel" type="button">Cancel event</button>
     </div>` : ''}
@@ -39,6 +40,9 @@ function renderManage(d) {
   if (!open) return;
   const gMsg = document.getElementById('gMsg');
   Range.wire('g');
+  document.getElementById('gRegs').onclick = () => openRegistrants(
+    `/api/guest/events/${current.id}/registrations?${query()}`,
+    `/api/guest/events/${current.id}/registrations/export?${query()}`);
   document.getElementById('gMove').onclick = async ev => {
     const range = Range.read('g');
     if (range.error) { showMsg(gMsg, range.error, false); return; }
